@@ -50,11 +50,14 @@ that the Delegate's phone must be online to push — which it must be anyway.
 
 ### Device pairing
 
-- The device generates its own keypair and displays an activation code that is a
-  **fingerprint of its public key**, so the phone can verify it is wrapping keys to the
-  real tablet rather than to something a compromised server substituted. This is what
-  makes "the server cannot read your scrambles" true rather than merely promised.
-- Codes are single-use with a short TTL (~10 min), independent of the session they create.
+- The app issues a one-time code and it is typed **into** the device, per the original
+  brief. An earlier plan had this reversed — the device showing a fingerprint of its own
+  public key — which would have let the phone verify it was wrapping keys to the real
+  tablet. That only guards against a malicious server, and it costs the ability to generate
+  codes in advance and let somebody else set the tablets up, which is worth more here.
+- Codes are single-use with a short TTL (30 min), independent of the session they create.
+  Claiming a code clears it in the same statement, so it cannot be replayed and two devices
+  racing the same code cannot both win.
 - Sessions have a hard expiry in hours, chosen at setup, extendable with one tap from the
   phone. A session expiring mid-round is worse than the problem we are solving.
 - Remote revoke, per device and all-devices.
@@ -78,10 +81,11 @@ Competition venue wifi is assumed to be bad.
 
 - At pairing, the device downloads every encrypted PDF for the competition into IndexedDB.
   Afterwards the network carries only a tiny "show set X, here is its key" message.
-- Transport is **capped-duration SSE** (~25 s, then clean close and instant reconnect).
-  Long-lived SSE does not survive serverless function duration limits; this is effectively
-  long-polling at ~144 requests/hour/device, which is both cheaper and lower-latency than
-  5-second polling.
+- Transport is **short polling**, every 3 s while the display is visible and backing off
+  when it is hidden. This replaced a plan for capped-duration SSE, which assumed the server
+  could be notified when a push happened. Neon's HTTP driver has no `LISTEN/NOTIFY`, so a
+  held connection would have to poll the database on a timer anyway — more traffic than the
+  client simply asking, for the same latency.
 - Wake Lock so the tablet does not sleep mid-round.
 - The phone shows a real last-seen timestamp per device, not just a green dot.
 
@@ -171,11 +175,21 @@ ugly row in a table.
 | # | Phase | Status |
 |---|---|---|
 | 1 | Zip pipeline — parser module + CLI + self-test | **Done** |
-| 2 | Scaffold, WCA OAuth, delegate gate, deployed to Vercel + Neon | **In progress** |
-| 3 | Crypto identity — keypairs, competition keys, co-delegate wrapping, recovery phrase | |
-| 4 | Device pairing — activation codes, session lifetime, revoke | |
-| 5 | Display client — pre-cache, SSE, pdf.js, wake lock, ACK | |
-| 6 | Phone dashboard — device cards, push, push-to-all, clear, audit log | |
+| 2 | Scaffold, WCA OAuth, delegate gate | **Done** |
+| 3 | Crypto identity — keypairs, competition keys, co-delegate wrapping, recovery phrase | **Done** |
+| 4 | Device pairing — activation codes, session lifetime, revoke | **Done** |
+| 5 | Display client — pre-cache, polling, pdf.js, wake lock, ACK | **Done** |
+| 6 | Phone dashboard — device cards, push, push-to-all, clear | **Done** |
+| 7 | Deploy to Vercel + Neon | Next |
+
+### Still outstanding
+
+- **Audit log.** `push_log` is written on every push but nothing reads it yet.
+- **Auto-purge.** `ends_on` is stored for it; the job that acts on it does not exist.
+- **PWA.** The original brief called for an installable app. There is no manifest or
+  service worker yet, so the display runs as an ordinary browser tab.
+- **WCA event ordering.** Sets sort alphabetically by TNoodle's event name rather than in
+  official event order, which needs a TNoodle-name to WCA-event mapping.
 
 Sequenced to retire risk early rather than to look impressive early. Phase 1 came first
 because it was the most likely to surprise us and needed no infrastructure.
