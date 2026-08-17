@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { readSession } from "@/lib/session";
+import DisplayModeBanner from "../display-mode-banner";
 import SettingsClient from "./settings-client";
 
 export default async function Settings() {
@@ -14,6 +15,8 @@ export default async function Settings() {
           Back
         </a>
       </div>
+
+      <DisplayModeBanner />
 
       <SettingsClient wcaUserId={session.wcaUserId} />
 

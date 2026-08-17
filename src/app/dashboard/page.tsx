@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { readSession } from "@/lib/session";
+import DisplayModeBanner from "../display-mode-banner";
 import DashboardClient from "./dashboard-client";
 
 function readableRank(status: string): string {
@@ -33,6 +34,8 @@ export default async function Dashboard() {
           </a>
         </div>
       </div>
+
+      <DisplayModeBanner />
 
       <DashboardClient wcaUserId={session.wcaUserId} />
     </main>

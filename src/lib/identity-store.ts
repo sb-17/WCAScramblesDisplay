@@ -50,6 +50,24 @@ export async function saveIdentity(wcaUserId: number, keys: CryptoKeyPair): Prom
 }
 
 /**
+ * Removes every Delegate key held here. Used when this browser becomes a display: a tablet
+ * left in the scrambling area holding a Delegate's private key could open every scramble
+ * set of every competition they have access to, which is the worst outcome in this design.
+ *
+ * Safe to do because the key is registered server-side and restorable with the recovery
+ * phrase, which is mandatory at setup.
+ */
+export async function clearIdentities(): Promise<void> {
+  const idb = await open();
+  try {
+    const tx = idb.transaction(STORE, "readwrite");
+    await request(tx.objectStore(STORE).clear());
+  } finally {
+    idb.close();
+  }
+}
+
+/**
  * Browsers can evict IndexedDB under storage pressure, which would mean falling back to
  * the recovery phrase mid-competition. Asking for persistence makes that far less likely.
  */

@@ -20,6 +20,7 @@ import {
   saveDeviceKeys,
   writeToken,
 } from "@/lib/display-store";
+import { clearIdentities } from "@/lib/identity-store";
 import { webCryptoAvailable } from "@/lib/webcrypto";
 import { unpackSet } from "@/scrambles/payload";
 import InsecureContext from "../insecure-context";
@@ -116,6 +117,12 @@ export default function DisplayClient() {
       await saveDeviceKeys(keys);
       writeToken(claimed.token);
       keysRef.current = keys;
+
+      // This browser is now a display, so it stops being a Delegate device. Forgetting to
+      // sign out is the failure this prevents, and a tablet left in the scrambling area
+      // holding a Delegate's private key would open every scramble set they can reach.
+      await standDownAsDelegate();
+
       setToken(claimed.token);
       setCode("");
     } catch (err) {
@@ -272,6 +279,9 @@ export default function DisplayClient() {
         <div className="card stack" style={{ maxWidth: "24rem", width: "100%" }}>
           <h1>Pair this display</h1>
           <p className="muted">Enter the code from the Delegate&rsquo;s phone.</p>
+          <p className="muted" style={{ fontSize: "0.875rem" }}>
+            Pairing signs out any Delegate on this device and removes their key from it.
+          </p>
           <input
             className="input mono"
             value={code}
@@ -336,6 +346,23 @@ export default function DisplayClient() {
       </section>
     </main>
   );
+}
+
+/**
+ * Ends any Delegate session in this browser and removes their key from it. Failures are
+ * swallowed on purpose: pairing must not be blocked by cleanup that is belt-and-braces.
+ */
+async function standDownAsDelegate(): Promise<void> {
+  try {
+    await fetch("/api/auth/logout", { method: "POST", redirect: "manual" });
+  } catch {
+    // Already signed out, or offline. Either way there is nothing to end.
+  }
+  try {
+    await clearIdentities();
+  } catch {
+    // No key stored here.
+  }
 }
 
 async function ack(token: string, setId: string | null): Promise<void> {
