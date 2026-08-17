@@ -8,6 +8,8 @@ export interface CompetitionSummary {
   endsOn: string | null;
   canPush: boolean;
   setCount: number;
+  /** Only the creator may remove a competition outright. */
+  isOwner: boolean;
 }
 
 export class CompetitionTakenError extends Error {
@@ -71,13 +73,15 @@ export async function listCompetitionsFor(wcaUserId: number): Promise<Competitio
     ends_on: string | null;
     can_push: boolean;
     set_count: string;
+    is_owner: boolean;
   }>(sql`
     select c.id,
            c.wca_competition_id,
            c.name,
            c.ends_on,
            a.can_push,
-           count(s.id) as set_count
+           count(s.id) as set_count,
+           c.created_by = ${wcaUserId} as is_owner
       from competition_access a
       join competitions c on c.id = a.competition_id
       left join scramble_sets s on s.competition_id = c.id
@@ -93,7 +97,26 @@ export async function listCompetitionsFor(wcaUserId: number): Promise<Competitio
     endsOn: row.ends_on,
     canPush: row.can_push,
     setCount: Number(row.set_count),
+    isOwner: row.is_owner,
   }));
+}
+
+/**
+ * Only the creator can remove a competition, because this destroys the scrambles for
+ * everyone with access, not just for the caller. The foreign keys cascade, so the sets,
+ * devices and access rows go with it.
+ */
+export async function deleteCompetition(
+  competitionId: string,
+  wcaUserId: number,
+): Promise<boolean> {
+  const sql = db();
+  const deleted = await rows(sql`
+    delete from competitions
+     where id = ${competitionId} and created_by = ${wcaUserId}
+    returning id
+  `);
+  return deleted.length > 0;
 }
 
 export interface CompetitionAccess {

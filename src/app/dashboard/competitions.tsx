@@ -12,6 +12,7 @@ interface Competition {
   endsOn: string | null;
   canPush: boolean;
   setCount: number;
+  isOwner: boolean;
 }
 
 interface SearchResult {
@@ -32,6 +33,7 @@ export default function Competitions({ keys }: { keys: CryptoKeyPair }) {
   const [error, setError] = useState<string | null>(null);
   const [unofficialName, setUnofficialName] = useState("");
   const [unofficialDate, setUnofficialDate] = useState(today());
+  const [confirming, setConfirming] = useState<string | null>(null);
 
   async function refresh() {
     const response = await fetch("/api/competitions");
@@ -134,6 +136,24 @@ export default function Competitions({ keys }: { keys: CryptoKeyPair }) {
     }
   }
 
+  async function remove(competition: Competition) {
+    setCreating(competition.id);
+    setError(null);
+    try {
+      const response = await fetch(`/api/competitions/${competition.id}`, { method: "DELETE" });
+      if (!response.ok) {
+        setError("Could not remove that competition.");
+        return;
+      }
+      setConfirming(null);
+      await refresh();
+    } catch {
+      setError("Could not remove that competition.");
+    } finally {
+      setCreating(null);
+    }
+  }
+
   const alreadyAdded = new Set(competitions?.map((c) => c.wcaCompetitionId) ?? []);
 
   return (
@@ -160,11 +180,35 @@ export default function Competitions({ keys }: { keys: CryptoKeyPair }) {
                 {competition.canPush ? "" : " · view only"}
               </div>
             </div>
-            {competition.wcaCompetitionId ? (
-              <span className="tag mono">{competition.wcaCompetitionId}</span>
-            ) : (
-              <span className="tag">Unofficial</span>
-            )}
+            <div className="row">
+              {competition.wcaCompetitionId ? (
+                <span className="tag mono">{competition.wcaCompetitionId}</span>
+              ) : (
+                <span className="tag">Unofficial</span>
+              )}
+
+              {/* Two steps, because this deletes the uploaded scrambles with it. */}
+              {competition.isOwner && confirming === competition.id ? (
+                <>
+                  <button
+                    className="button button--danger"
+                    onClick={() => void remove(competition)}
+                    disabled={creating !== null}
+                  >
+                    {creating === competition.id ? "Removing…" : "Delete scrambles"}
+                  </button>
+                  <button className="button" onClick={() => setConfirming(null)}>
+                    Cancel
+                  </button>
+                </>
+              ) : null}
+
+              {competition.isOwner && confirming !== competition.id ? (
+                <button className="button" onClick={() => setConfirming(competition.id)}>
+                  Remove
+                </button>
+              ) : null}
+            </div>
           </div>
         ))}
       </div>

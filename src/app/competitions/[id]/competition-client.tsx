@@ -181,20 +181,6 @@ export default function CompetitionClient({
         </a>
       </div>
 
-      <div className="card stack">
-        <h2>Scramble sets</h2>
-        {detail.sets.length === 0 ? (
-          <p className="muted">None uploaded yet.</p>
-        ) : (
-          detail.sets.map((set) => (
-            <div key={set.id} className="listitem">
-              <div>{set.label}</div>
-              <span className="tag">{Math.max(1, Math.round(set.bytes / 1024))} kB</span>
-            </div>
-          ))
-        )}
-      </div>
-
       <Devices competitionId={competitionId} />
 
       {!keys ? (
@@ -299,6 +285,21 @@ export default function CompetitionClient({
           ) : null}
         </div>
       )}
+
+      {/* Last: this list runs to dozens of rows and would bury everything else. */}
+      <div className="card stack">
+        <h2>Scramble sets</h2>
+        {detail.sets.length === 0 ? (
+          <p className="muted">None uploaded yet.</p>
+        ) : (
+          detail.sets.map((set) => (
+            <div key={set.id} className="listitem">
+              <div>{set.label}</div>
+              <span className="tag">{Math.max(1, Math.round(set.bytes / 1024))} kB</span>
+            </div>
+          ))
+        )}
+      </div>
     </>
   );
 }
