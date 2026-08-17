@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { claimIdentity, getIdentity } from "@/db/users";
+import { claimIdentity, getIdentity, replaceRecovery } from "@/db/users";
 import { fromBase64, toBase64 } from "@/lib/bytes";
 import { readSession } from "@/lib/session";
 
@@ -20,6 +20,31 @@ export async function GET() {
     recoverySalt: toBase64(identity.recoverySalt),
     recoveryBlob: toBase64(identity.recoveryBlob),
   });
+}
+
+/** Re-wraps an existing key under a new recovery phrase. The public key is untouched. */
+export async function PUT(request: Request) {
+  const session = await readSession();
+  if (!session) return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
+
+  let body: { recoverySalt?: string; recoveryBlob?: string };
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "invalid-json" }, { status: 400 });
+  }
+
+  if (!body.recoverySalt || !body.recoveryBlob) {
+    return NextResponse.json({ error: "missing-fields" }, { status: 400 });
+  }
+
+  const replaced = await replaceRecovery(session.wcaUserId, {
+    salt: fromBase64(body.recoverySalt),
+    blob: fromBase64(body.recoveryBlob),
+  });
+
+  if (!replaced) return NextResponse.json({ error: "no-identity" }, { status: 404 });
+  return NextResponse.json({ ok: true });
 }
 
 export async function POST(request: Request) {

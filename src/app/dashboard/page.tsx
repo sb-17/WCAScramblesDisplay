@@ -15,21 +15,20 @@ export default async function Dashboard() {
 
   return (
     <main className="page stack" style={{ gap: "2rem" }}>
-      <div className="stack" style={{ gap: "0.5rem" }}>
-        <h1>{session.name}</h1>
-        <div>
-          <span className="tag">{readableRank(session.delegateStatus)}</span>{" "}
-          {session.wcaId ? <span className="tag mono">{session.wcaId}</span> : null}
+      <div className="row" style={{ justifyContent: "space-between" }}>
+        <div className="stack" style={{ gap: "0.5rem" }}>
+          <h1>{session.name}</h1>
+          <div>
+            <span className="tag">{readableRank(session.delegateStatus)}</span>{" "}
+            {session.wcaId ? <span className="tag mono">{session.wcaId}</span> : null}
+          </div>
         </div>
+        <a className="tag" href="/settings">
+          Settings
+        </a>
       </div>
 
       <DashboardClient wcaUserId={session.wcaUserId} />
-
-      <form action="/api/auth/logout" method="post">
-        <button className="button" type="submit">
-          Sign out
-        </button>
-      </form>
     </main>
   );
 }

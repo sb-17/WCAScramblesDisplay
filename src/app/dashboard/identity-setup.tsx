@@ -160,21 +160,17 @@ export default function IdentitySetup({
     }
   }
 
-  if (stage === "checking") return <p className="muted">Checking your encryption key…</p>;
+  if (stage === "checking") return <p className="muted">Checking…</p>;
 
-  if (stage === "ready") {
-    return <p className="muted">Encryption key ready on this device.</p>;
-  }
+  // Nothing to say once the key works. Its status lives on the settings page.
+  if (stage === "ready") return null;
 
   return (
     <div className="card stack">
       {stage === "generate" ? (
         <>
           <h2>Set up your encryption key</h2>
-          <p className="muted">
-            This key is generated here in your browser and never sent anywhere. It is what
-            keeps the server from being able to read your scrambles.
-          </p>
+          <p className="muted">Generated in your browser and never sent anywhere.</p>
           <div>
             <button className="button button--primary" onClick={generate} disabled={busy}>
               {busy ? "Generating…" : "Generate key"}
@@ -186,10 +182,7 @@ export default function IdentitySetup({
       {stage === "phrase" && pending ? (
         <>
           <h2>Write down your recovery phrase</h2>
-          <p className="muted">
-            This is shown once and cannot be retrieved later. Without it, clearing your
-            browser data means losing access to every competition you have uploaded.
-          </p>
+          <p className="muted">Shown once. It is the only way back if this browser loses your key.</p>
           <p className="phrase mono">{pending.phrase}</p>
           <label className="row">
             <input
@@ -214,10 +207,7 @@ export default function IdentitySetup({
       {stage === "recover" ? (
         <>
           <h2>Restore your encryption key</h2>
-          <p className="muted">
-            This account already has a key, but this browser does not. Enter the recovery
-            phrase you saved when you first set it up.
-          </p>
+          <p className="muted">This browser does not have your key. Enter your recovery phrase.</p>
           <input
             className="input mono"
             value={phraseInput}
@@ -241,11 +231,7 @@ export default function IdentitySetup({
       {stage === "mismatch" ? (
         <>
           <h2>This browser holds a different key</h2>
-          <p className="muted">
-            The key stored here does not match the one registered for your account, so it
-            cannot open your competitions. Restore the registered key with your recovery
-            phrase.
-          </p>
+          <p className="muted">It cannot open your competitions. Restore the registered key.</p>
           <div>
             <button className="button" onClick={() => setStage("recover")}>
               Enter recovery phrase

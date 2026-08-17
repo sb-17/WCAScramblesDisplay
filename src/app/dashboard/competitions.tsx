@@ -171,10 +171,6 @@ export default function Competitions({ keys }: { keys: CryptoKeyPair }) {
 
       <div className="card stack">
         <h2>Add a WCA competition</h2>
-        <p className="muted">
-          Only competitions where the WCA lists you as a Delegate, and which have not
-          already finished, will appear.
-        </p>
         <input
           className="input"
           value={query}
@@ -222,22 +218,17 @@ export default function Competitions({ keys }: { keys: CryptoKeyPair }) {
 
       <div className="card stack">
         <h2>Add an unofficial competition</h2>
-        <p className="muted">
-          For unofficial competitions, and for trying this out — there is no reason to
-          generate scrambles for a real competition just to test. Not linked to the WCA, so
-          it is yours alone.
-        </p>
         <input
           className="input"
           value={unofficialName}
           onChange={(event) => setUnofficialName(event.target.value)}
-          placeholder="Name, e.g. Thursday Practice"
+          placeholder="Name"
           maxLength={120}
           autoComplete="off"
         />
         <label className="stack" style={{ gap: "0.375rem" }}>
           <span className="muted" style={{ fontSize: "0.875rem" }}>
-            Last day — scrambles are purged some days after this.
+            Last day
           </span>
           <input
             className="input"

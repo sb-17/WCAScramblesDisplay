@@ -46,6 +46,28 @@ export async function getIdentity(wcaUserId: number): Promise<Identity | null> {
 }
 
 /**
+ * Replaces only the recovery material, for a Delegate who has lost their phrase but still
+ * has their key in this browser. The public key is deliberately left alone: changing it
+ * would orphan every competition key already wrapped to it.
+ */
+export async function replaceRecovery(
+  wcaUserId: number,
+  recovery: { salt: Uint8Array; blob: Uint8Array },
+): Promise<boolean> {
+  const sql = db();
+  const updated = await rows(sql`
+    update users
+       set recovery_salt = ${toBytea(recovery.salt)},
+           recovery_blob = ${toBytea(recovery.blob)},
+           updated_at = now()
+     where wca_user_id = ${wcaUserId}
+       and public_key is not null
+    returning wca_user_id
+  `);
+  return updated.length > 0;
+}
+
+/**
  * Refuses to overwrite an identity that already exists. A second browser must recover the
  * original key rather than publish a new one -- replacing the public key would orphan
  * every competition key already wrapped to the old one, locking the Delegate out of their

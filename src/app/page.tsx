@@ -24,8 +24,7 @@ export default async function Home({
       <div className="stack" style={{ gap: "0.5rem" }}>
         <h1>WCA Scrambles Display</h1>
         <p className="muted">
-          Push a scramble set to the display in the scrambling area, without walking over
-          to type a passcode before every group.
+          Push scramble sets to the scrambling-area display, without typing a passcode.
         </p>
       </div>
 
@@ -40,8 +39,7 @@ export default async function Home({
       </a>
 
       <p className="muted" style={{ fontSize: "0.875rem" }}>
-        Delegates only. Scrambles are encrypted in your browser before they are uploaded —
-        the server never sees a scramble, a passcode, or your master password.
+        Delegates only. Scrambles are encrypted in your browser before upload.
       </p>
     </main>
   );
