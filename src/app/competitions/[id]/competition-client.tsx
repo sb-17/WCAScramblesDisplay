@@ -38,7 +38,7 @@ interface Detail {
 const WARNING_TEXT: Record<string, string> = {
   "pdf-without-passcode": "no passcode in the archive — cannot be uploaded",
   "passcode-without-pdf": "passcode with no matching PDF",
-  "unrecognised-label": "name not understood — uploaded, but unsorted",
+  "unrecognised-label": "unusual name — imported and usable, but it will sort last",
 };
 
 /** Loose comparison, only to catch uploading a different competition's archive. */
@@ -189,6 +189,10 @@ export default function CompetitionClient({
   const importable = parsed?.sets.filter((set) => !isFewestMoves(set.label)) ?? [];
   const skipped = (parsed?.sets.length ?? 0) - importable.length;
 
+  // Warnings come from the parser, which runs before the Fewest Moves filter. Reporting
+  // them would describe sets that are not being imported at all.
+  const warnings = parsed?.warnings.filter((warning) => !isFewestMoves(warning.label)) ?? [];
+
   return (
     <>
       <div className="row" style={{ justifyContent: "space-between" }}>
@@ -281,9 +285,9 @@ export default function CompetitionClient({
                 </div>
               ) : null}
 
-              {parsed.warnings.length > 0 ? (
+              {warnings.length > 0 ? (
                 <div className="stack" style={{ gap: "0.375rem" }}>
-                  {parsed.warnings.map((warning) => (
+                  {warnings.map((warning) => (
                     <div key={`${warning.kind}-${warning.label}`} className="muted"
                       style={{ fontSize: "0.875rem" }}>
                       {warning.label} — {WARNING_TEXT[warning.kind] ?? warning.kind}
