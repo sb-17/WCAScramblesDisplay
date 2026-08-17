@@ -311,8 +311,12 @@ export default function CompetitionClient({
       {/* Last, and collapsed: this list runs to dozens of rows on a real competition. */}
       <details className="card collapse">
         <summary>
-          <h2>Scramble sets</h2>
-          <span className="tag">{detail.sets.length}</span>
+          <h2>
+            Scramble sets{" "}
+            <span className="muted" style={{ fontWeight: 400 }}>
+              ({detail.sets.length})
+            </span>
+          </h2>
         </summary>
         <div className="stack" style={{ marginTop: "0.5rem" }}>
           {detail.sets.length === 0 ? (

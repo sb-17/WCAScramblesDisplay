@@ -236,13 +236,32 @@ a:focus-visible {
   display: none;
 }
 
+/* A tiny chevron is too easy to miss, so the affordance says what it does. */
 .collapse > summary::after {
-  content: "▾";
+  content: "Show ▾";
+  flex: none;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+  font-weight: 500;
   color: var(--text-dim);
+  white-space: nowrap;
 }
 
 .collapse[open] > summary::after {
-  content: "▴";
+  content: "Hide ▴";
+}
+
+.collapse > summary:hover::after {
+  background: var(--card-hover);
+  color: var(--text);
+}
+
+.collapse > summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius);
 }
 
 .input {

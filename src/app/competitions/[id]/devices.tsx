@@ -36,6 +36,20 @@ const isExpired = (iso: string | null) => iso !== null && new Date(iso).getTime(
 const labelOf = (sets: SetRow[], setId: string) =>
   sets.find((set) => set.id === setId)?.label ?? "a set that has since been removed";
 
+/**
+ * While a push is in flight, report what is on its way rather than the state the device has
+ * not caught up from. Showing the stale value with a caveat appended reads as though the
+ * old set is still up, which is the opposite of what is happening.
+ */
+function showingLine(device: Device, sets: SetRow[]): string {
+  if (device.currentSetId !== device.ackedSetId) {
+    return device.currentSetId
+      ? `Sending ${labelOf(sets, device.currentSetId)}…`
+      : "Clearing the screen…";
+  }
+  return device.ackedSetId ? `Showing: ${labelOf(sets, device.ackedSetId)}` : "Screen is clear";
+}
+
 export default function Devices({
   competitionId,
   sets,
@@ -52,8 +66,6 @@ export default function Devices({
   const [hours, setHours] = useState(String(DEFAULT_HOURS));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // Re-renders so the countdowns stay honest without a reload.
-  const [, setTick] = useState(0);
 
   async function refresh() {
     const response = await fetch(`/api/competitions/${competitionId}/devices`);
@@ -62,12 +74,18 @@ export default function Devices({
     setDevices(body.devices);
   }
 
+  // A device can take a poll cycle to acknowledge, so keep checking until it has. Faster
+  // while something is in flight, and slow enough otherwise to keep the countdowns honest.
+  const awaitingAck = (devices ?? []).some(
+    (device) => device.currentSetId !== device.ackedSetId,
+  );
+
   useEffect(() => {
     void refresh();
-    const timer = setInterval(() => setTick((value) => value + 1), 30_000);
+    const timer = setInterval(() => void refresh(), awaitingAck ? 2_000 : 10_000);
     return () => clearInterval(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [competitionId]);
+  }, [competitionId, awaitingAck]);
 
   async function add() {
     setBusy(true);
@@ -235,12 +253,7 @@ export default function Devices({
             {/* What the device says it is showing, not what we asked it to show. */}
             {live ? (
               <>
-                <div>
-                  {device.ackedSetId
-                    ? `Showing: ${labelOf(sets, device.ackedSetId)}`
-                    : "Screen is clear"}
-                  {device.currentSetId !== device.ackedSetId ? " · not confirmed yet" : ""}
-                </div>
+                <div>{showingLine(device, sets)}</div>
                 <div className="controls">
                   <select
                     className="input"
