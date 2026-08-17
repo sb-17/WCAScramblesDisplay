@@ -166,10 +166,6 @@ carry colour-coded diagrams, so the sheet is shown exactly as TNoodle drew it.
 the side button) pins the device to one app properly. No web page can enforce that on
 itself, and at a competition it is worth the thirty seconds.
 
-**Before using this at a real competition**, it is worth a word with the WCA Software and
-Regulations teams. The encryption means the server cannot read your scrambles, which makes
-that a much easier conversation, but it is better had early than after somebody asks.
-
 ---
 
 ## Running your own copy
