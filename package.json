@@ -4,11 +4,13 @@
   "type": "module",
   "scripts": {
     "parse": "tsx src/scrambles/cli.ts",
-    "selftest": "tsx src/scrambles/selftest.ts",
+    "selftest": "npm run selftest:zip && npm run selftest:crypto",
     "typecheck": "tsc --noEmit",
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "selftest:zip": "tsx src/scrambles/selftest.ts",
+    "selftest:crypto": "tsx src/lib/crypto.selftest.ts"
   },
   "dependencies": {
     "@zip.js/zip.js": "^2.8.51",
