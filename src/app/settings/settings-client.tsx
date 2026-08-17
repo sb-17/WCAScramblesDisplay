@@ -2,11 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { toBase64 } from "@/lib/bytes";
-import {
-  fingerprint,
-  generateRecoveryPhrase,
-  wrapPrivateKeyForRecovery,
-} from "@/lib/crypto";
+import { generateRecoveryPhrase, wrapPrivateKeyForRecovery } from "@/lib/crypto";
 import { loadIdentity } from "@/lib/identity-store";
 
 type Stage = "loading" | "missing" | "ready" | "phrase";
@@ -14,8 +10,6 @@ type Stage = "loading" | "missing" | "ready" | "phrase";
 export default function SettingsClient({ wcaUserId }: { wcaUserId: number }) {
   const [stage, setStage] = useState<Stage>("loading");
   const [keys, setKeys] = useState<CryptoKeyPair | null>(null);
-  const [id, setId] = useState<string | null>(null);
-  const [shown, setShown] = useState(false);
   const [phrase, setPhrase] = useState<string | null>(null);
   const [confirmed, setConfirmed] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -29,7 +23,6 @@ export default function SettingsClient({ wcaUserId }: { wcaUserId: number }) {
         return;
       }
       setKeys(local);
-      setId(await fingerprint(local.publicKey));
       setStage("ready");
     })();
   }, [wcaUserId]);
@@ -126,21 +119,7 @@ export default function SettingsClient({ wcaUserId }: { wcaUserId: number }) {
   return (
     <div className="card stack">
       <h2>Encryption key</h2>
-
-      {shown ? (
-        <>
-          <p className="phrase mono">{id}</p>
-          <p className="muted" style={{ fontSize: "0.875rem" }}>
-            Identifies your key. Not a secret, and it opens nothing.
-          </p>
-        </>
-      ) : (
-        <div>
-          <button className="button" onClick={() => setShown(true)}>
-            Show key
-          </button>
-        </div>
-      )}
+      <p className="muted">Set up on this device.</p>
 
       <div className="listitem">
         <div>

@@ -87,20 +87,6 @@ export async function derivePublicKey(privateKey: CryptoKey): Promise<CryptoKey>
   return crypto.subtle.importKey("jwk", jwk, CURVE, true, []);
 }
 
-/**
- * A short, readable digest of a public key, for showing a Delegate which identity a device
- * holds. Not a secret -- it identifies a key, it does not open anything.
- */
-export async function fingerprint(publicKey: CryptoKey): Promise<string> {
-  const digest = new Uint8Array(
-    await crypto.subtle.digest("SHA-256", await exportPublicKey(publicKey)),
-  );
-  const chars = Array.from(digest.subarray(0, 12), (byte) =>
-    RECOVERY_ALPHABET.charAt(byte % RECOVERY_ALPHABET.length),
-  );
-  return [0, 4, 8].map((start) => chars.slice(start, start + 4).join("")).join("-");
-}
-
 // -- wrapping a secret to somebody's public key ------------------------------
 
 /**
