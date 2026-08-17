@@ -3,175 +3,93 @@
 Show scramble sets on a tablet in the scrambling area, without walking over and typing a
 passcode before every group.
 
-You upload a competition's TNoodle archive once, pair the tablets that will display
-scrambles, and from then on send any set to any screen from your phone.
-
 ---
 
 ## How it works
 
-There are two sides to the app.
+- **Dashboard** — your phone or laptop. Sign in with WCA, upload scrambles, push sets to screens.
+- **Display** — a tablet in the scrambling area. Never signs in. Paired once with a code, then only shows what you send it.
 
-**The Delegate dashboard**, on your phone or laptop. You sign in with your WCA account, set
-up competitions, upload scrambles, and push sets to screens.
-
-**The display**, on a tablet in the scrambling area. It never signs in. It is paired once
-with a one-time code and then only ever shows what a Delegate sends it.
-
-The two are connected through the server, but the server is only a courier. Scrambles are
-encrypted in your browser before they are uploaded, and the keys never leave Delegates'
-devices. Nobody running the server can read a scramble, a passcode, or your master
-password.
+Scrambles are encrypted in your browser before upload. The server is a courier — it cannot
+read a scramble, a passcode, or your master password.
 
 ---
 
-## Installing it
+## Installing
 
-The app works in any browser, but on the scrambling-area tablet it is worth installing to
-the home screen. It then runs without an address bar, so there is nothing to type a
-different URL into and no browser tabs to wander off into.
+Worth doing on the tablet: it then runs with no address bar and no tabs.
 
-**iPad or iPhone.** Open the app in Safari, tap **Share**, then **Add to Home Screen**.
-
-**Android or a laptop.** Open the app in Chrome or Edge and use **Install** from the address
-bar or the browser menu.
-
-Install it on your phone too, if you like — the dashboard is built for one-handed use while
-holding a clipboard.
+- **iPad / iPhone** — Safari → **Share** → **Add to Home Screen**
+- **Android / laptop** — Chrome or Edge → **Install**
 
 ---
 
-## Setting up before a competition
+## Before the competition
 
-### 1. Sign in
+**1. Sign in.** Delegates only, any rank.
 
-Sign in with WCA. Only Delegates can use the app, at any rank.
+First time, you get an **encryption key** and a one-time **recovery phrase**
+(`ZH73-AS2Y-RCGG-FW0Q-AZNZ`). Write it down — it is the only way back on a new phone, and
+nobody can reset it. Lose it and you re-upload the archive; the scrambles themselves are
+never at risk. Settings can issue a new phrase while a browser still holds your key.
 
-The first time, you are asked to create an **encryption key**. It is generated in your
-browser and never sent anywhere. You will be shown a **recovery phrase** once, like
-`ZH73-AS2Y-RCGG-FW0Q-AZNZ`.
+**2. Add the competition.**
 
-**Write it down.** It is the only way to get your key back on a new phone, or after clearing
-your browser data. Nobody can reset it for you — that is exactly what stops the server being
-able to read your scrambles. If you lose it, you have not lost the scrambles themselves: you
-still have the TNoodle archive and can set the competition up again.
+- **WCA** — type its name. Only competitions you delegate, and only unfinished ones, appear.
+- **Unofficial** — name and last day. Also how you test, without generating real scrambles.
 
-You can generate a fresh phrase at any time from **Settings**, as long as the browser you
-are on still has your key.
+Already set up by a co-delegate? Ask them for access rather than making a second copy.
 
-### 2. Add the competition
+**3. Upload.** Pick the TNoodle zip, enter the master password. Everything happens in your
+browser. Check the summary before storing — it warns if the archive looks like a different
+competition. Fewest Moves is skipped. Easiest from the laptop the zip is already on.
 
-On the dashboard:
-
-- **A WCA competition** — start typing its name. Only competitions the WCA lists you as a
-  Delegate of will appear, and only ones that have not already finished.
-- **An unofficial competition** — give it a name and a last day. Use this for unofficial
-  events, and for trying things out. There is no reason to generate scrambles for a real
-  competition just to test.
-
-If a co-delegate has already set up the same WCA competition, you will be told so and asked
-to request access from them rather than creating a second copy. Two copies would mean two
-encrypted sets of the same scrambles and no way to tell which tablet was paired to which.
-
-### 3. Upload the scrambles
-
-Open the competition and use **Upload scrambles**. Pick the TNoodle zip and enter the
-competition's master password.
-
-Everything happens in your browser: the archive is opened, each scramble set is encrypted
-under its own key, and only the encrypted result is uploaded. The master password and the
-passcode sheet never leave your machine.
-
-You get a summary before anything is stored — how many sets were found, and anything
-unusual. Check the competition name matches; the app warns you if the archive looks like it
-belongs to a different competition, which is a much better time to notice than later.
-
-**Fewest Moves is skipped.** They are not imported at all.
-
-The archive is easiest to upload from the laptop it is already on. The day-to-day dashboard
-is designed for your phone.
-
-### 4. Share with co-delegates
-
-In **Delegates**, search for another Delegate and add them. They get full access to the
-competition: its scrambles, its screens, everything.
-
-They must have signed into this app at least once first. Sharing works by re-encrypting the
-competition key to their personal key, so somebody who has never opened the app has nothing
-to encrypt to.
-
-Removing someone destroys their copy of the key, so their access genuinely ends rather than
-merely being hidden. Only whoever created the competition can add or remove people, and they
-cannot remove themselves.
+**4. Share.** **Delegates** → search → add. They need to have signed in here at least once,
+since sharing re-encrypts the key to theirs. Removing someone destroys their copy of it.
+Creator only, and they cannot remove themselves.
 
 ---
 
 ## On the day
 
-### Pairing a screen
+**Pair a screen**
 
-1. On the competition page, under **Display devices**, add a device. Give it a name you will
-   recognise across the room — "Scrambling table 1" beats "iPad".
-2. Choose how long its session should last. Twelve hours covers a normal day.
-3. You get an eight-character code, good for 30 minutes and usable once.
-4. On the tablet, open the app and choose **Open display**, then type the code.
+1. **Display devices** → add one. Name it for the room: "Scrambling table 1".
+2. Set the session length. 12 hours covers a day.
+3. Take the 8-character code — one use, 30 minutes.
+4. On the tablet: **Open display** → type the code.
 
-The tablet downloads the whole competition as encrypted files while it pairs. From then on
-it needs almost nothing from the network, so a bad venue connection cannot stop a scramble
-appearing.
+It downloads the whole competition encrypted while pairing, so a bad venue network cannot
+stop a scramble appearing. Pairing also signs out any Delegate on that tablet and removes
+their key — otherwise a forgotten session there opens every competition you can reach.
 
-**Pairing signs out any Delegate on that tablet and removes their key from it.** That is
-deliberate. A tablet left in the scrambling area still signed in as you could open every
-scramble of every competition you have access to, and remembering to sign out is exactly the
-kind of thing that gets forgotten at 8am.
+**Show a set**
 
-### Showing a scramble set
+Pick a set, press **Show**. The line above the controls reports what the tablet says it is
+showing, not what you sent: "Sending…" until it confirms.
 
-Pick a set next to a device and press **Show**. It appears within a few seconds.
+| | |
+|---|---|
+| **Clear** / **Clear all** | Blank one screen, or all of them |
+| **All devices at once** | Same set everywhere |
+| **Extend** | More hours on a session running out |
+| **Remove** | Revoke a tablet, wipe its scrambles, back to the code screen |
 
-The line above the controls tells you what that screen is **actually showing**, as reported
-by the tablet itself — not what you asked for. While a set is on its way it says
-"Sending…", and only changes to "Showing:" once the tablet confirms. A screen you cannot see
-reporting its own state is the only signal worth trusting.
-
-- **Clear** blanks one screen. **Clear all** blanks every screen.
-- **All devices at once** sends the same set to every paired screen, for when they are all
-  scrambling the same group.
-- **Extend** adds hours to a session that is running out.
-- **Remove** revokes a tablet immediately. It wipes its downloaded scrambles and returns it
-  to the code screen.
-
-Each tablet only ever holds the key for what is on its screen right now. Previous keys are
-thrown away on every change, so a tablet that goes missing exposes one group, not the
-weekend.
-
-The display shows the event, round and set in large text above the sheet. Scramblers should
-glance at it — it is the fastest way to catch a set being sent to the wrong table.
+Each tablet holds the key only for what is on screen. A lost tablet exposes one group.
 
 ---
 
 ## Worth knowing
 
-**There is no way to browse scrambles on the tablet.** No list, no tabs, no back button. It
-shows what was sent and nothing else. That is the point: a scrambler must not be able to
-reach a set you did not choose.
-
-**The screen stays awake** by itself while a display is running.
-
-**Scramble sheets are never recoloured.** Megaminx, Square-1, Clock and Pyraminx sheets
-carry colour-coded diagrams, so the sheet is shown exactly as TNoodle drew it.
-
-**For real lockdown, use the tablet's own controls.** iPadOS **Guided Access** (triple-click
-the side button) pins the device to one app properly. No web page can enforce that on
-itself, and at a competition it is worth the thirty seconds.
+- **No browsing on the tablet.** No list, no tabs, no back button — only what was sent.
+- **The screen stays awake** on its own.
+- **Sheets are never recoloured**, so Megaminx, Square-1, Clock and Pyraminx diagrams stay correct.
+- **For real lockdown**, use iPadOS **Guided Access**. No web page can pin itself down.
+- **Before a real competition**, worth a word with WCA Software and Regulations.
 
 ---
 
 ## Running your own copy
 
-Everything needed is in [`.env.example`](.env.example): a WCA OAuth application, a Postgres
-database, and a secret for signing sessions. Then `npm install`, `npm run migrate`,
-`npm run dev`.
-
-[ROADMAP.md](ROADMAP.md) records the design decisions, why each was made, and what is still
-outstanding.
+See [`.env.example`](.env.example), then `npm install`, `npm run migrate`, `npm run dev`.
+[ROADMAP.md](ROADMAP.md) has the design decisions and what is still outstanding.
