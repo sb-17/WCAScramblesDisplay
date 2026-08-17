@@ -21,7 +21,17 @@ import {
  */
 
 const IGNORED_DIRS = /(^|\/)(interchange|printing)\//i;
-const LABEL = /^(?<event>.+?) Round (?<round>\d+) Scramble Set (?<set>[A-Za-z]+)$/;
+
+/**
+ * `<Event> Round <N> Scramble Set <X>`, with an optional trailing attempt.
+ *
+ * Multi-Blind scrambles each attempt separately and names them
+ * `3x3x3 Multiple Blindfolded Round 1 Scramble Set A Attempt 1`. The attempt is not
+ * captured: attempts of one set share a set letter, and since the label is kept whole and
+ * used as the sort tiebreaker they already order correctly.
+ */
+const LABEL =
+  /^(?<event>.+?) Round (?<round>\d+) Scramble Set (?<set>[A-Za-z]+)(?: Attempt \d+)?$/;
 
 export interface SetIdentity {
   event: string;

@@ -37,6 +37,14 @@ body {
   padding: 0;
 }
 
+/*
+ * Reserve the scrollbar gutter always. Without it a short page has no scrollbar and a long
+ * one does, so centred content sits a few pixels apart between screens.
+ */
+html {
+  scrollbar-gutter: stable;
+}
+
 body {
   background: var(--bg);
   color: var(--text);

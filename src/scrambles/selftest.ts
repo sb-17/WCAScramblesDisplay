@@ -27,6 +27,8 @@ only give them the minimum amount of passcodes needed.
 3x3x3 Round 1 Scramble Set B: p4uydzdp
 3x3x3 Blindfolded Round 2 Scramble Set A: yxy85drm
 Megaminx Round 1 Scramble Set A: 3m35x29y
+3x3x3 Multiple Blindfolded Round 1 Scramble Set A Attempt 1: mb1attmp
+3x3x3 Multiple Blindfolded Round 1 Scramble Set A Attempt 2: mb2attmp
 Weird Unnumbered Sheet: abcd1234
 3x3x3 Round 9 Scramble Set A: orphan99
 `;
@@ -37,6 +39,8 @@ const PDF_LABELS = [
   "3x3x3 Round 1 Scramble Set B",
   "3x3x3 Blindfolded Round 2 Scramble Set A",
   "Megaminx Round 1 Scramble Set A",
+  "3x3x3 Multiple Blindfolded Round 1 Scramble Set A Attempt 1",
+  "3x3x3 Multiple Blindfolded Round 1 Scramble Set A Attempt 2",
   "Weird Unnumbered Sheet",
   "2x2x2 Round 1 Scramble Set A",
 ];
