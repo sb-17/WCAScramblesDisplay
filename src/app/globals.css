@@ -187,6 +187,64 @@ a:focus-visible {
   padding-bottom: 0;
 }
 
+/*
+ * A block within a card: full width and left aligned. Deliberately not .listitem plus
+ * .stack -- that combination inherits align-items:center from .listitem and quietly centres
+ * everything inside.
+ */
+.block {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.625rem;
+  padding: 0.875rem 0;
+  border-top: 1px solid var(--border);
+}
+
+.block-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+/* Control strip: the select stretches, the buttons keep their size and stay aligned. */
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.controls .input {
+  flex: 1 1 12rem;
+  max-width: 22rem;
+  width: auto;
+}
+
+.collapse > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  cursor: pointer;
+  list-style: none;
+}
+
+.collapse > summary::-webkit-details-marker {
+  display: none;
+}
+
+.collapse > summary::after {
+  content: "▾";
+  color: var(--text-dim);
+}
+
+.collapse[open] > summary::after {
+  content: "▴";
+}
+
 .input {
   width: 100%;
   min-height: 3rem;

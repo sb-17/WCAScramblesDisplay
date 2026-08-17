@@ -185,32 +185,65 @@ export default function Devices({
       {devices === null ? <p className="muted">Loading…</p> : null}
       {devices?.length === 0 ? <p className="muted">None yet.</p> : null}
 
-      {devices?.map((device) => (
-        <div key={device.id} className="listitem">
-          <div style={{ minWidth: 0 }}>
-            <div>{device.name}</div>
-            <div className="muted" style={{ fontSize: "0.875rem" }}>
-              {status(device)}
+      {devices?.map((device) => {
+        const live = device.pairedAt !== null && !isExpired(device.sessionExpiresAt);
+        return (
+          <div key={device.id} className="block">
+            <div className="block-head">
+              <div style={{ minWidth: 0 }}>
+                <div>{device.name}</div>
+                <div className="muted" style={{ fontSize: "0.875rem" }}>
+                  {status(device)}
+                </div>
+              </div>
+              <div className="row">
+                {live ? (
+                  <button
+                    type="button"
+                    className="button button--danger"
+                    onClick={() => void push(device, null)}
+                    disabled={busy || !device.ackedSetId}
+                  >
+                    Clear
+                  </button>
+                ) : null}
+                {device.pairedAt ? (
+                  <button
+                    type="button"
+                    className="button"
+                    onClick={() => void extend(device)}
+                    disabled={busy}
+                  >
+                    Extend
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  className="button button--danger"
+                  onClick={() => void remove(device)}
+                  disabled={busy}
+                >
+                  Remove
+                </button>
+              </div>
             </div>
+
             {device.activationCode && !isExpired(device.codeExpiresAt) ? (
-              <p className="phrase mono" style={{ marginTop: "0.5rem" }}>
-                {device.activationCode}
-              </p>
+              <p className="phrase mono">{device.activationCode}</p>
             ) : null}
 
             {/* What the device says it is showing, not what we asked it to show. */}
-            {device.pairedAt && !isExpired(device.sessionExpiresAt) ? (
+            {live ? (
               <>
-                <div style={{ marginTop: "0.5rem" }}>
+                <div>
                   {device.ackedSetId
                     ? `Showing: ${labelOf(sets, device.ackedSetId)}`
                     : "Screen is clear"}
                   {device.currentSetId !== device.ackedSetId ? " · not confirmed yet" : ""}
                 </div>
-                <div className="row" style={{ marginTop: "0.5rem", flexWrap: "wrap" }}>
+                <div className="controls">
                   <select
                     className="input"
-                    style={{ maxWidth: "18rem" }}
                     value={chosen[device.id] ?? ""}
                     onChange={(event) =>
                       setChosen({ ...chosen, [device.id]: event.target.value })
@@ -224,47 +257,36 @@ export default function Devices({
                     ))}
                   </select>
                   <button
+                    type="button"
                     className="button button--primary"
                     onClick={() => void push(device, chosen[device.id] ?? null)}
                     disabled={busy || !chosen[device.id]}
                   >
                     Show
                   </button>
-                  <button
-                    className="button button--danger"
-                    onClick={() => void push(device, null)}
-                    disabled={busy || !device.ackedSetId}
-                  >
-                    Clear
-                  </button>
                 </div>
               </>
             ) : null}
           </div>
-          <div className="row">
-            {device.pairedAt ? (
-              <button className="button" onClick={() => void extend(device)} disabled={busy}>
-                Extend
-              </button>
-            ) : null}
-            <button
-              className="button button--danger"
-              onClick={() => void remove(device)}
-              disabled={busy}
-            >
-              Remove
-            </button>
-          </div>
-        </div>
-      ))}
+        );
+      })}
 
       {(devices ?? []).some((d) => d.pairedAt && !isExpired(d.sessionExpiresAt)) ? (
-        <div className="listitem stack" style={{ gap: "0.75rem" }}>
-          <div>All devices at once</div>
-          <div className="row" style={{ flexWrap: "wrap" }}>
+        <div className="block">
+          <div className="block-head">
+            <div>All devices at once</div>
+            <button
+              type="button"
+              className="button button--danger"
+              onClick={() => void pushToAll(null)}
+              disabled={busy}
+            >
+              Clear all
+            </button>
+          </div>
+          <div className="controls">
             <select
               className="input"
-              style={{ maxWidth: "18rem" }}
               value={allChoice}
               onChange={(event) => setAllChoice(event.target.value)}
             >
@@ -276,24 +298,19 @@ export default function Devices({
               ))}
             </select>
             <button
+              type="button"
               className="button button--primary"
               onClick={() => void pushToAll(allChoice)}
               disabled={busy || !allChoice}
             >
               Show on all
             </button>
-            <button
-              className="button button--danger"
-              onClick={() => void pushToAll(null)}
-              disabled={busy}
-            >
-              Clear all
-            </button>
           </div>
         </div>
       ) : null}
 
-      <div className="listitem stack" style={{ gap: "0.75rem" }}>
+      <div className="block">
+        <div>Add a device</div>
         <input
           className="input"
           value={name}
@@ -302,10 +319,7 @@ export default function Devices({
           maxLength={60}
           autoComplete="off"
         />
-        <label className="stack" style={{ gap: "0.375rem" }}>
-          <span className="muted" style={{ fontSize: "0.875rem" }}>
-            Session length in hours
-          </span>
+        <div className="controls">
           <input
             className="input"
             type="number"
@@ -313,10 +327,14 @@ export default function Devices({
             max={72}
             value={hours}
             onChange={(event) => setHours(event.target.value)}
+            aria-label="Session length in hours"
+            style={{ flex: "0 0 6rem" }}
           />
-        </label>
-        <div>
+          <span className="muted" style={{ fontSize: "0.875rem" }}>
+            hours
+          </span>
           <button
+            type="button"
             className="button"
             onClick={() => void add()}
             disabled={busy || name.trim().length === 0}

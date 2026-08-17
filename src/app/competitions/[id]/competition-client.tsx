@@ -308,20 +308,25 @@ export default function CompetitionClient({
         </div>
       )}
 
-      {/* Last: this list runs to dozens of rows and would bury everything else. */}
-      <div className="card stack">
-        <h2>Scramble sets</h2>
-        {detail.sets.length === 0 ? (
-          <p className="muted">None uploaded yet.</p>
-        ) : (
-          detail.sets.map((set) => (
-            <div key={set.id} className="listitem">
-              <div>{set.label}</div>
-              <span className="tag">{Math.max(1, Math.round(set.bytes / 1024))} kB</span>
-            </div>
-          ))
-        )}
-      </div>
+      {/* Last, and collapsed: this list runs to dozens of rows on a real competition. */}
+      <details className="card collapse">
+        <summary>
+          <h2>Scramble sets</h2>
+          <span className="tag">{detail.sets.length}</span>
+        </summary>
+        <div className="stack" style={{ marginTop: "0.5rem" }}>
+          {detail.sets.length === 0 ? (
+            <p className="muted">None uploaded yet.</p>
+          ) : (
+            detail.sets.map((set) => (
+              <div key={set.id} className="listitem">
+                <div>{set.label}</div>
+                <span className="tag">{Math.max(1, Math.round(set.bytes / 1024))} kB</span>
+              </div>
+            ))
+          )}
+        </div>
+      </details>
     </>
   );
 }
