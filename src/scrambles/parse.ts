@@ -3,11 +3,8 @@ import {
   TextWriter,
   Uint8ArrayWriter,
   ZipReader,
-  configure,
   type FileEntry,
 } from "@zip.js/zip.js";
-
-configure({ useWebWorkers: false });
 
 /**
  * A TNoodle scrambles archive looks like this:

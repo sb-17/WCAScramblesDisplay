@@ -7,7 +7,11 @@
  * throwaway test data.
  */
 import { readFile } from "node:fs/promises";
+import { configure } from "@zip.js/zip.js";
 import { parseScrambleZip } from "./parse";
+
+// Node has no DOM workers; the browser keeps them so a large archive does not block the UI.
+configure({ useWebWorkers: false });
 
 const args = process.argv.slice(2);
 const showPasscodes = args.includes("--show-passcodes");

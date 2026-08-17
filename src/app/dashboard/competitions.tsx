@@ -152,7 +152,7 @@ export default function Competitions({ keys }: { keys: CryptoKeyPair }) {
         {competitions?.map((competition) => (
           <div key={competition.id} className="listitem">
             <div>
-              <div>{competition.name}</div>
+              <a href={`/competitions/${competition.id}`}>{competition.name}</a>
               <div className="muted" style={{ fontSize: "0.875rem" }}>
                 {competition.setCount === 0
                   ? "No scrambles uploaded yet"
@@ -171,6 +171,10 @@ export default function Competitions({ keys }: { keys: CryptoKeyPair }) {
 
       <div className="card stack">
         <h2>Add a WCA competition</h2>
+        <p className="muted" style={{ fontSize: "0.875rem" }}>
+          Type at least 3 letters. Only competitions where you are listed as a Delegate
+          appear.
+        </p>
         <input
           className="input"
           value={query}
@@ -228,7 +232,7 @@ export default function Competitions({ keys }: { keys: CryptoKeyPair }) {
         />
         <label className="stack" style={{ gap: "0.375rem" }}>
           <span className="muted" style={{ fontSize: "0.875rem" }}>
-            Last day
+            Last day of the competition
           </span>
           <input
             className="input"

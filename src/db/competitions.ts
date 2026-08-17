@@ -96,18 +96,42 @@ export async function listCompetitionsFor(wcaUserId: number): Promise<Competitio
   }));
 }
 
-/** Returns the competition key wrapped to this Delegate, or null if they have no access. */
-export async function wrappedKeyFor(
+export interface CompetitionAccess {
+  name: string;
+  wcaCompetitionId: string | null;
+  endsOn: string | null;
+  canPush: boolean;
+  /** Only this Delegate's own key can open it, so serving it to them is safe. */
+  wrappedCompetitionKey: Uint8Array<ArrayBuffer>;
+}
+
+/** Null when the Delegate has no access, which is also how a wrong id is reported. */
+export async function accessTo(
   competitionId: string,
   wcaUserId: number,
-): Promise<Uint8Array<ArrayBuffer> | null> {
+): Promise<CompetitionAccess | null> {
   const sql = db();
-  const found = await rows<{ wrapped_competition_key: unknown }>(sql`
-    select wrapped_competition_key
-      from competition_access
-     where competition_id = ${competitionId} and wca_user_id = ${wcaUserId}
+  const found = await rows<{
+    name: string;
+    wca_competition_id: string | null;
+    ends_on: string | null;
+    can_push: boolean;
+    wrapped_competition_key: unknown;
+  }>(sql`
+    select c.name, c.wca_competition_id, c.ends_on, a.can_push, a.wrapped_competition_key
+      from competition_access a
+      join competitions c on c.id = a.competition_id
+     where a.competition_id = ${competitionId} and a.wca_user_id = ${wcaUserId}
   `);
 
   const row = found[0];
-  return row ? fromBytea(row.wrapped_competition_key) : null;
+  if (!row) return null;
+
+  return {
+    name: row.name,
+    wcaCompetitionId: row.wca_competition_id,
+    endsOn: row.ends_on,
+    canPush: row.can_push,
+    wrappedCompetitionKey: fromBytea(row.wrapped_competition_key),
+  };
 }

@@ -5,8 +5,11 @@
  *
  *   npm run selftest
  */
-import { BlobWriter, TextReader, Uint8ArrayReader, ZipWriter } from "@zip.js/zip.js";
+import { BlobWriter, TextReader, Uint8ArrayReader, ZipWriter, configure } from "@zip.js/zip.js";
 import { parseScrambleZip } from "./parse";
+import { packSet, unpackSet } from "./payload";
+
+configure({ useWebWorkers: false });
 
 const MASTER = "master-pw-123";
 
@@ -84,4 +87,28 @@ try {
   console.log("  FAIL: no error raised");
 } catch (err) {
   console.log(`  ok: ${(err as Error).message}`);
+}
+
+// PDF bytes are arbitrary, so the pack format must survive a payload that happens to
+// contain the same bytes the length prefix uses.
+console.log("\n--- set payload packing ---");
+{
+  const awkward = new Uint8Array([0x00, 0x08, 0x25, 0x50, 0x44, 0x46, 0x00, 0xff, 0x0a]);
+  const round = unpackSet(packSet(awkward, "fcse9ze8"));
+  const pdfMatches =
+    round.pdf.length === awkward.length && round.pdf.every((b, i) => b === awkward[i]);
+  console.log(`  ${pdfMatches ? "ok  " : "FAIL"}  pdf round trips byte for byte`);
+  console.log(`  ${round.passcode === "fcse9ze8" ? "ok  " : "FAIL"}  passcode round trips`);
+
+  const empty = unpackSet(packSet(new Uint8Array(0), ""));
+  console.log(
+    `  ${empty.pdf.length === 0 && empty.passcode === "" ? "ok  " : "FAIL"}  empty payload round trips`,
+  );
+
+  try {
+    unpackSet(new Uint8Array([0x00]));
+    console.log("  FAIL  truncated payload accepted");
+  } catch {
+    console.log("  ok    truncated payload rejected");
+  }
 }
