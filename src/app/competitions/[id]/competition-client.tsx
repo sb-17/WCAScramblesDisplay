@@ -208,15 +208,20 @@ export default function CompetitionClient({
             The TNoodle zip. Nothing leaves your browser unencrypted.
           </p>
 
-          <input
-            className="input"
-            type="file"
-            accept=".zip"
-            onChange={(event) => {
-              setFile(event.target.files?.[0] ?? null);
-              setParsed(null);
-            }}
-          />
+          <label className="filepicker">
+            <input
+              type="file"
+              accept=".zip"
+              onChange={(event) => {
+                setFile(event.target.files?.[0] ?? null);
+                setParsed(null);
+              }}
+            />
+            <span className="button">Choose file</span>
+            <span className="filename" data-chosen={file !== null}>
+              {file?.name ?? "No file chosen"}
+            </span>
+          </label>
           <input
             className="input"
             type="password"
