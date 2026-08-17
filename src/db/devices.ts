@@ -1,4 +1,4 @@
-import { createHash, randomBytes } from "node:crypto";
+﻿import { createHash, randomBytes } from "node:crypto";
 import { db, fromBytea, rows, toBytea } from "./client";
 
 /** Crockford base32 again: unambiguous when read off a phone and typed on a tablet. */
@@ -21,6 +21,8 @@ export interface DeviceRow {
   currentSetId: string | null;
   ackedSetId: string | null;
   ackedAt: string | null;
+  /** False while the set is on screen but covered, waiting for a scrambler to confirm it. */
+  ackedConfirmed: boolean;
 }
 
 export function normaliseCode(code: string): string {
@@ -67,7 +69,7 @@ export async function createDevice(input: {
          ${input.createdBy})
       on conflict (activation_code) do nothing
       returning id, name, activation_code, code_expires_at, paired_at,
-                session_expires_at, last_seen_at, public_key,
+                session_expires_at, last_seen_at, public_key, acked_confirmed,
                 current_set_id, acked_set_id, acked_at
     `);
 
@@ -82,7 +84,7 @@ export async function listDevices(competitionId: string): Promise<DeviceRow[]> {
   const sql = db();
   const found = await rows<DeviceRecord>(sql`
     select id, name, activation_code, code_expires_at, paired_at,
-           session_expires_at, last_seen_at, public_key,
+           session_expires_at, last_seen_at, public_key, acked_confirmed,
            current_set_id, acked_set_id, acked_at
       from devices
      where competition_id = ${competitionId}
@@ -247,11 +249,23 @@ export async function readDeviceState(deviceId: string): Promise<DeviceState | n
   };
 }
 
-export async function acknowledgeState(deviceId: string, setId: string | null): Promise<void> {
+/**
+ * A device reports twice for each push: once when it has the set decrypted and covered, and
+ * again when a scrambler has confirmed it. The Delegate's phone distinguishes the two, so
+ * "on its way", "waiting to be confirmed" and "on screen" are never conflated.
+ */
+export async function acknowledgeState(
+  deviceId: string,
+  setId: string | null,
+  confirmed: boolean,
+): Promise<void> {
   const sql = db();
   await sql`
     update devices
-       set acked_set_id = ${setId}, acked_at = now(), last_seen_at = now()
+       set acked_set_id = ${setId},
+           acked_confirmed = ${confirmed},
+           acked_at = now(),
+           last_seen_at = now()
      where id = ${deviceId}
   `;
 }
@@ -309,6 +323,7 @@ interface DeviceRecord {
   current_set_id: string | null;
   acked_set_id: string | null;
   acked_at: string | null;
+  acked_confirmed: boolean;
 }
 
 function toDevice(row: DeviceRecord): DeviceRow {
@@ -324,5 +339,6 @@ function toDevice(row: DeviceRecord): DeviceRow {
     currentSetId: row.current_set_id,
     ackedSetId: row.acked_set_id,
     ackedAt: row.acked_at,
+    ackedConfirmed: row.acked_confirmed,
   };
 }

@@ -132,6 +132,14 @@ alter table devices add column if not exists pushed_at timestamptz;
 alter table devices add column if not exists acked_set_id uuid;
 alter table devices add column if not exists acked_at timestamptz;
 
+-- A set arrives decrypted but covered until a scrambler confirms it is the group they are
+-- about to scramble. Typing a passcode used to catch a wrong set by simply not opening it;
+-- pushing has no such failure, so the check is put back where it was -- at the table, by
+-- the person who knows which group is up.
+--
+-- Defaults true so rows written before this existed are not reported as unconfirmed.
+alter table devices add column if not exists acked_confirmed boolean not null default true;
+
 -- Names are denormalised so the log survives deleting a device or a competition's sets.
 create table if not exists push_log (
   id              uuid primary key default gen_random_uuid(),

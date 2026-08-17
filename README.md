@@ -65,8 +65,16 @@ their key — otherwise a forgotten session there opens every competition you ca
 
 **Show a set**
 
-Pick a set, press **Show**. The line above the controls reports what the tablet says it is
-showing, not what you sent: "Sending…" until it confirms.
+Pick a set, press **Show**, then press the button naming it again. On the tablet, a
+scrambler sees the set name and has to confirm it is the group they are about to scramble
+before any scrambles appear.
+
+Two checks, because they catch different mistakes: yours catches a mis-tap, theirs catches
+picking the wrong group — they are the one who knows which group is up. Until they confirm,
+nothing is on screen and your phone says so.
+
+The line above the controls reports what the tablet says, not what you sent: "Sending…",
+then "Waiting for the scrambler to confirm", then "Showing:".
 
 | | |
 |---|---|

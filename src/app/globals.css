@@ -371,6 +371,30 @@ select.input {
   text-align: left;
 }
 
+/* Deliberately big: this is the last chance to catch a set going to the wrong table. */
+.confirm {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  max-width: 34rem;
+  padding: 1.25rem;
+}
+
+.confirm-label {
+  font-size: clamp(1.5rem, 5vw, 2.75rem);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+.confirm .button {
+  min-height: 3.75rem;
+  padding: 0 2rem;
+  font-size: 1.125rem;
+}
+
 .pdf-host {
   display: flex;
   flex-direction: column;

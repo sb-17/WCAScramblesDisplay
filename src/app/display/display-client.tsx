@@ -58,6 +58,8 @@ export default function DisplayClient() {
     pdf: Uint8Array;
     passcode: string;
   } | null>(null);
+  // A pushed set is decrypted but kept covered until somebody at the table confirms it.
+  const [confirmed, setConfirmed] = useState(false);
   const [showError, setShowError] = useState<string | null>(null);
   const [offline, setOffline] = useState(false);
 
@@ -235,8 +237,10 @@ export default function DisplayClient() {
     void (async () => {
       if (!state.setId || !state.wrappedSetKey) {
         setShowing(null);
+        setConfirmed(false);
         setShowError(null);
-        await ack(token, null);
+        // Nothing to check when a screen is being blanked.
+        await ack(token, null, true);
         return;
       }
 
@@ -253,10 +257,13 @@ export default function DisplayClient() {
         const { pdf, passcode } = unpackSet(await decryptData(setKey, ciphertext));
 
         setShowError(null);
+        setConfirmed(false);
         setShowing({ setId: state.setId, label: state.label ?? "", pdf, passcode });
-        await ack(token, state.setId);
+        // Reported as arrived but unconfirmed, so the Delegate can see it is waiting.
+        await ack(token, state.setId, false);
       } catch (err) {
         setShowing(null);
+        setConfirmed(false);
         setShowError(`Could not open that scramble set: ${(err as Error).message}`);
       }
     })();
@@ -326,7 +333,9 @@ export default function DisplayClient() {
   return (
     <main className="display">
       <header className="display-header">
-        <div className="display-title">{showing?.label ?? state?.deviceName ?? "Display"}</div>
+        <div className="display-title">
+          {(confirmed ? showing?.label : null) ?? state?.deviceName ?? "Display"}
+        </div>
         <div className="row">
           {offline ? <span className="tag">Offline</span> : null}
           {caching ? (
@@ -337,10 +346,40 @@ export default function DisplayClient() {
         </div>
       </header>
 
-      <section className={showing ? "display-body display-body--sheet" : "display-body"}>
+      <section
+        className={showing && confirmed ? "display-body display-body--sheet" : "display-body"}
+      >
         {showError ? <p className="notice">{showError}</p> : null}
         {!showError && !showing ? <p className="muted">Waiting for a scramble set…</p> : null}
-        {showing ? (
+
+        {/*
+          The scrambles stay covered until somebody at the table agrees this is the group
+          they are about to scramble. Typing a passcode used to catch a wrong set by simply
+          not opening it; this puts that check back, with the person who knows which group
+          is up rather than the Delegate who chose it.
+        */}
+        {showing && !confirmed ? (
+          <div className="confirm">
+            <p className="muted">Is this the set you are about to scramble?</p>
+            <p className="confirm-label">{showing.label}</p>
+            <button
+              type="button"
+              className="button button--primary"
+              onClick={() => {
+                setConfirmed(true);
+                void ack(token, showing.setId, true);
+              }}
+            >
+              Yes, show the scrambles
+            </button>
+            <p className="muted" style={{ fontSize: "0.875rem" }}>
+              If this is not the right set, tell the Delegate. Nothing is shown until you
+              press the button.
+            </p>
+          </div>
+        ) : null}
+
+        {showing && confirmed ? (
           <PdfView key={showing.setId} pdf={showing.pdf} passcode={showing.passcode} />
         ) : null}
       </section>
@@ -365,12 +404,12 @@ async function standDownAsDelegate(): Promise<void> {
   }
 }
 
-async function ack(token: string, setId: string | null): Promise<void> {
+async function ack(token: string, setId: string | null, confirmed: boolean): Promise<void> {
   try {
     await fetch("/api/display/state", {
       method: "POST",
       headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
-      body: JSON.stringify({ setId }),
+      body: JSON.stringify({ setId, confirmed }),
     });
   } catch {
     // The next poll will try again.

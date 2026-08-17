@@ -27,13 +27,13 @@ export async function POST(request: Request) {
   const device = await authenticateDevice(request);
   if (!device) return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
 
-  let body: { setId?: string | null };
+  let body: { setId?: string | null; confirmed?: boolean };
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: "invalid-json" }, { status: 400 });
   }
 
-  await acknowledgeState(device.deviceId, body.setId ?? null);
+  await acknowledgeState(device.deviceId, body.setId ?? null, body.confirmed === true);
   return NextResponse.json({ ok: true });
 }

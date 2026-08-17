@@ -17,6 +17,7 @@ interface Device {
   currentSetId: string | null;
   ackedSetId: string | null;
   ackedAt: string | null;
+  ackedConfirmed: boolean;
 }
 
 const DEFAULT_HOURS = 12;
@@ -47,7 +48,11 @@ function showingLine(device: Device, sets: SetRow[]): string {
       ? `Sending ${labelOf(sets, device.currentSetId)}…`
       : "Clearing the screen…";
   }
-  return device.ackedSetId ? `Showing: ${labelOf(sets, device.ackedSetId)}` : "Screen is clear";
+  if (!device.ackedSetId) return "Screen is clear";
+  if (!device.ackedConfirmed) {
+    return `Waiting for the scrambler to confirm ${labelOf(sets, device.ackedSetId)}`;
+  }
+  return `Showing: ${labelOf(sets, device.ackedSetId)}`;
 }
 
 export default function Devices({
@@ -61,6 +66,14 @@ export default function Devices({
 }) {
   const [chosen, setChosen] = useState<Record<string, string>>({});
   const [allChoice, setAllChoice] = useState("");
+  /**
+   * Which push is awaiting the Delegate's own confirmation: a device id, or "all".
+   *
+   * The confirm button repeats the set name rather than saying "Confirm", so it has to be
+   * read to be acted on. This catches a mis-tap; the scrambler's confirmation on the display
+   * catches the different error of picking the wrong group deliberately.
+   */
+  const [confirming, setConfirming] = useState<string | null>(null);
   const [devices, setDevices] = useState<Device[] | null>(null);
   const [name, setName] = useState("");
   const [hours, setHours] = useState(String(DEFAULT_HOURS));
@@ -77,7 +90,7 @@ export default function Devices({
   // A device can take a poll cycle to acknowledge, so keep checking until it has. Faster
   // while something is in flight, and slow enough otherwise to keep the countdowns honest.
   const awaitingAck = (devices ?? []).some(
-    (device) => device.currentSetId !== device.ackedSetId,
+    (device) => device.currentSetId !== device.ackedSetId || !device.ackedConfirmed,
   );
 
   useEffect(() => {
@@ -258,9 +271,11 @@ export default function Devices({
                   <select
                     className="input"
                     value={chosen[device.id] ?? ""}
-                    onChange={(event) =>
-                      setChosen({ ...chosen, [device.id]: event.target.value })
-                    }
+                    disabled={confirming === device.id}
+                    onChange={(event) => {
+                      setConfirming(null);
+                      setChosen({ ...chosen, [device.id]: event.target.value });
+                    }}
                   >
                     <option value="">Choose a scramble set…</option>
                     {sets.map((set) => (
@@ -269,14 +284,37 @@ export default function Devices({
                       </option>
                     ))}
                   </select>
-                  <button
-                    type="button"
-                    className="button button--primary"
-                    onClick={() => void push(device, chosen[device.id] ?? null)}
-                    disabled={busy || !chosen[device.id]}
-                  >
-                    Show
-                  </button>
+                  {confirming === device.id ? (
+                    <>
+                      <button
+                        type="button"
+                        className="button button--primary"
+                        onClick={() => {
+                          setConfirming(null);
+                          void push(device, chosen[device.id] ?? null);
+                        }}
+                        disabled={busy}
+                      >
+                        Send {labelOf(sets, chosen[device.id] ?? "")}
+                      </button>
+                      <button
+                        type="button"
+                        className="button"
+                        onClick={() => setConfirming(null)}
+                      >
+                        Cancel
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      className="button button--primary"
+                      onClick={() => setConfirming(device.id)}
+                      disabled={busy || !chosen[device.id]}
+                    >
+                      Show
+                    </button>
+                  )}
                 </div>
               </>
             ) : null}
@@ -301,7 +339,11 @@ export default function Devices({
             <select
               className="input"
               value={allChoice}
-              onChange={(event) => setAllChoice(event.target.value)}
+              disabled={confirming === "all"}
+              onChange={(event) => {
+                setConfirming(null);
+                setAllChoice(event.target.value);
+              }}
             >
               <option value="">Choose a scramble set…</option>
               {sets.map((set) => (
@@ -310,14 +352,33 @@ export default function Devices({
                 </option>
               ))}
             </select>
-            <button
-              type="button"
-              className="button button--primary"
-              onClick={() => void pushToAll(allChoice)}
-              disabled={busy || !allChoice}
-            >
-              Show on all
-            </button>
+            {confirming === "all" ? (
+              <>
+                <button
+                  type="button"
+                  className="button button--primary"
+                  onClick={() => {
+                    setConfirming(null);
+                    void pushToAll(allChoice);
+                  }}
+                  disabled={busy}
+                >
+                  Send {labelOf(sets, allChoice)} to every screen
+                </button>
+                <button type="button" className="button" onClick={() => setConfirming(null)}>
+                  Cancel
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                className="button button--primary"
+                onClick={() => setConfirming("all")}
+                disabled={busy || !allChoice}
+              >
+                Show on all
+              </button>
+            )}
           </div>
         </div>
       ) : null}
