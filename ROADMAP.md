@@ -171,7 +171,7 @@ ugly row in a table.
 | # | Phase | Status |
 |---|---|---|
 | 1 | Zip pipeline — parser module + CLI + self-test | **Done** |
-| 2 | Scaffold, WCA OAuth, delegate gate, deployed to Vercel + Neon | Next |
+| 2 | Scaffold, WCA OAuth, delegate gate, deployed to Vercel + Neon | **In progress** |
 | 3 | Crypto identity — keypairs, competition keys, co-delegate wrapping, recovery phrase | |
 | 4 | Device pairing — activation codes, session lifetime, revoke | |
 | 5 | Display client — pre-cache, SSE, pdf.js, wake lock, ACK | |
@@ -192,6 +192,24 @@ because it was the most likely to surprise us and needed no infrastructure.
   needed.
 
 Verified against a real competition archive.
+
+### Phase 2 — in progress
+
+Built and building clean; the OAuth round trip is untested until real credentials exist.
+
+- Next.js 16 / React 19, hand-rolled rather than `create-next-app` (our `package.json`,
+  `tsconfig.json` and `src/` would have collided with it).
+- **Plain CSS with custom properties, not Tailwind.** The design is a handful of tokens and
+  two layouts; Tailwind would add build config and a dependency for what CSS variables
+  already do. Easy to add later if it starts hurting.
+- `src/lib/wca.ts` — authorize URL, token exchange, `/api/v0/me`, delegate check. The
+  redirect URI is derived from forwarded headers so localhost and the deployed origin both
+  work with no extra configuration.
+- `src/lib/session.ts` — signed JWT in an httpOnly cookie. Deliberately stateless for now;
+  there is nothing to store until phase 3, so Neon is not yet wired up.
+- Sign-in, callback with CSRF `state` check, sign-out, and a gated `/dashboard`.
+
+Remaining: register the WCA OAuth application, verify the round trip, then deploy.
 
 ---
 

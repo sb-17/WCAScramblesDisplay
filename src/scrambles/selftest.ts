@@ -6,7 +6,7 @@
  *   npm run selftest
  */
 import { BlobWriter, TextReader, Uint8ArrayReader, ZipWriter } from "@zip.js/zip.js";
-import { parseScrambleZip } from "./parse.ts";
+import { parseScrambleZip } from "./parse";
 
 const MASTER = "master-pw-123";
 

@@ -7,7 +7,7 @@
  * throwaway test data.
  */
 import { readFile } from "node:fs/promises";
-import { parseScrambleZip } from "./parse.ts";
+import { parseScrambleZip } from "./parse";
 
 const args = process.argv.slice(2);
 const showPasscodes = args.includes("--show-passcodes");
