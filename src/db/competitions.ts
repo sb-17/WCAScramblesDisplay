@@ -2,7 +2,8 @@ import { db, fromBytea, rows, toBytea } from "./client";
 
 export interface CompetitionSummary {
   id: string;
-  wcaCompetitionId: string;
+  /** Null for unofficial competitions, which have no WCA record to point at. */
+  wcaCompetitionId: string | null;
   name: string;
   endsOn: string | null;
   canPush: boolean;
@@ -21,7 +22,7 @@ export class CompetitionTakenError extends Error {
  * the competition key would have no wrapper and the scrambles would be unreachable.
  */
 export async function createCompetition(input: {
-  wcaCompetitionId: string;
+  wcaCompetitionId: string | null;
   name: string;
   endsOn: string | null;
   createdBy: number;
@@ -29,13 +30,17 @@ export async function createCompetition(input: {
 }): Promise<string> {
   const sql = db();
 
-  const existing = await rows<{ name: string }>(sql`
-    select u.name
-      from competitions c
-      join users u on u.wca_user_id = c.created_by
-     where c.wca_competition_id = ${input.wcaCompetitionId}
-  `);
-  if (existing[0]) throw new CompetitionTakenError(existing[0].name);
+  // Only WCA competitions can collide. Unofficial ones are personal to their creator, so
+  // two Delegates each running a "Thursday Practice" is expected, not a conflict.
+  if (input.wcaCompetitionId !== null) {
+    const existing = await rows<{ name: string }>(sql`
+      select u.name
+        from competitions c
+        join users u on u.wca_user_id = c.created_by
+       where c.wca_competition_id = ${input.wcaCompetitionId}
+    `);
+    if (existing[0]) throw new CompetitionTakenError(existing[0].name);
+  }
 
   const created = await rows<{ id: string }>(sql`
     insert into competitions (wca_competition_id, name, ends_on, created_by)
@@ -61,7 +66,7 @@ export async function listCompetitionsFor(wcaUserId: number): Promise<Competitio
   const sql = db();
   const found = await rows<{
     id: string;
-    wca_competition_id: string;
+    wca_competition_id: string | null;
     name: string;
     ends_on: string | null;
     can_push: boolean;

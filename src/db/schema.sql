@@ -25,12 +25,17 @@ create table if not exists users (
   updated_at       timestamptz not null default now()
 );
 
--- One row per WCA competition. Unique on the WCA id deliberately: two Delegates at the
--- same competition must share one setup rather than each uploading their own, so a
--- collision means "already set up -- ask them for access", not "make a second one".
+-- One row per competition. Unique on the WCA id deliberately: two Delegates at the same
+-- competition must share one setup rather than each uploading their own, so a collision
+-- means "already set up -- ask them for access", not "make a second one".
+--
+-- A null wca_competition_id means an unofficial competition, which is also how testing is
+-- done -- nobody should generate scrambles for a real competition just to try this out.
+-- Postgres permits many nulls in a unique column, so unofficial competitions do not
+-- collide with each other.
 create table if not exists competitions (
   id                  uuid primary key default gen_random_uuid(),
-  wca_competition_id  text not null unique,
+  wca_competition_id  text unique,
   name                text not null,
 
   -- Drives automatic purging of scramble data once the competition is over.
@@ -80,3 +85,8 @@ create table if not exists scramble_sets (
 
 create index if not exists scramble_sets_competition_idx
   on scramble_sets (competition_id);
+
+-- Applied separately so databases created before unofficial competitions existed pick the
+-- change up. Dropping a constraint that is already absent is a no-op, so this stays
+-- re-runnable like everything else above.
+alter table competitions alter column wca_competition_id drop not null;
