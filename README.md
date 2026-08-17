@@ -87,7 +87,15 @@ but does nothing. That setting is development-only and has no effect once deploy
 ### 1. Database
 
 Either reuse your development Neon database, or create a second project for production and
-apply the schema to it:
+apply the schema to it.
+
+PowerShell:
+
+```powershell
+$env:DATABASE_URL = "<production url>"; npx tsx src/db/migrate.ts
+```
+
+bash:
 
 ```bash
 DATABASE_URL="<production url>" npx tsx src/db/migrate.ts
