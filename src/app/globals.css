@@ -155,3 +155,38 @@ a:focus-visible {
   border-left: 3px solid var(--danger);
   padding-left: 0.875rem;
 }
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.input {
+  width: 100%;
+  min-height: 3rem;
+  padding: 0 0.875rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+}
+
+.input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* Shown once and copied onto paper, so it needs to be unambiguous and large. */
+.phrase {
+  padding: 1rem;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  font-size: clamp(1rem, 4.5vw, 1.5rem);
+  letter-spacing: 0.06em;
+  text-align: center;
+  word-break: break-word;
+  user-select: all;
+}

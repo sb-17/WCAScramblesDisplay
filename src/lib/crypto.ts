@@ -76,6 +76,17 @@ export async function importPublicKey(raw: Bytes): Promise<CryptoKey> {
   return crypto.subtle.importKey("raw", raw, CURVE, false, []);
 }
 
+/**
+ * Recovery restores only the private half, but a usable identity needs both. WebCrypto has
+ * no direct "public from private", so go via JWK and drop the private scalar.
+ */
+export async function derivePublicKey(privateKey: CryptoKey): Promise<CryptoKey> {
+  const jwk = await crypto.subtle.exportKey("jwk", privateKey);
+  delete jwk.d;
+  jwk.key_ops = [];
+  return crypto.subtle.importKey("jwk", jwk, CURVE, true, []);
+}
+
 // -- wrapping a secret to somebody's public key ------------------------------
 
 /**

@@ -18,6 +18,15 @@ export function db(): Query {
 }
 
 /**
+ * The driver types its return as a union covering every result-shape option it supports.
+ * With the default options it is always an array of row objects, so narrow it once here
+ * instead of casting at every call site.
+ */
+export async function rows<T>(query: PromiseLike<unknown>): Promise<T[]> {
+  return (await query) as T[];
+}
+
+/**
  * node-postgres hands bytea back as a Buffer, and wants a Buffer going in. Both helpers
  * exist so the rest of the app can deal in plain Uint8Arrays and never think about it.
  */

@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { upsertUser } from "@/db/users";
 import { createSession } from "@/lib/session";
 import { STATE_COOKIE, callbackUrl, exchangeCode, fetchMe, isDelegate } from "@/lib/wca";
 
@@ -31,12 +32,21 @@ export async function GET(request: Request) {
 
   if (!isDelegate(user)) return fail(request, "not-delegate");
 
-  await createSession({
+  const session = {
     wcaUserId: user.id,
     name: user.name,
     wcaId: user.wca_id,
     delegateStatus: user.delegate_status as string,
-  });
+  };
+
+  try {
+    await upsertUser(session);
+  } catch (err) {
+    console.error("Could not record user", err);
+    return fail(request, "wca");
+  }
+
+  await createSession(session);
 
   return NextResponse.redirect(new URL("/dashboard", request.url));
 }

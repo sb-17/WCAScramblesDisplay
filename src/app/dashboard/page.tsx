@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { readSession } from "@/lib/session";
+import IdentitySetup from "./identity-setup";
 
 function readableRank(status: string): string {
   return status
@@ -21,6 +22,8 @@ export default async function Dashboard() {
           {session.wcaId ? <span className="tag mono">{session.wcaId}</span> : null}
         </div>
       </div>
+
+      <IdentitySetup wcaUserId={session.wcaUserId} />
 
       <div className="card stack">
         <h2>Competitions</h2>
