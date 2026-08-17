@@ -39,6 +39,33 @@ export function callbackUrl(request: Request): string {
   return `${origin}/api/auth/callback`;
 }
 
+export interface WcaCompetition {
+  id: string;
+  name: string;
+  start_date: string;
+  end_date: string;
+  delegates: { id: number; name: string; wca_id: string | null }[];
+}
+
+/** The competition's own Delegate list is the authority on who may set it up. */
+export function delegatesInclude(competition: WcaCompetition, wcaUserId: number): boolean {
+  return competition.delegates.some((delegate) => delegate.id === wcaUserId);
+}
+
+export async function searchCompetitions(query: string): Promise<WcaCompetition[]> {
+  const params = new URLSearchParams({ q: query, per_page: "25" });
+  const response = await fetch(`${WCA}/api/v0/competitions?${params}`);
+  if (!response.ok) throw new Error(`WCA competition search failed (${response.status})`);
+  return (await response.json()) as WcaCompetition[];
+}
+
+export async function fetchCompetition(id: string): Promise<WcaCompetition | null> {
+  const response = await fetch(`${WCA}/api/v0/competitions/${encodeURIComponent(id)}`);
+  if (response.status === 404) return null;
+  if (!response.ok) throw new Error(`WCA competition fetch failed (${response.status})`);
+  return (await response.json()) as WcaCompetition;
+}
+
 function clientId(): string {
   const id = process.env.WCA_CLIENT_ID;
   if (!id) throw new Error("WCA_CLIENT_ID is not set");

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { fromBase64, toBase64 } from "@/lib/bytes";
 import {
   derivePublicKey,
@@ -31,7 +31,17 @@ interface Pending {
 const sameBytes = (a: Uint8Array, b: Uint8Array) =>
   a.length === b.length && a.every((byte, i) => byte === b[i]);
 
-export default function IdentitySetup({ wcaUserId }: { wcaUserId: number }) {
+export default function IdentitySetup({
+  wcaUserId,
+  onReady,
+}: {
+  wcaUserId: number;
+  onReady: (keys: CryptoKeyPair) => void;
+}) {
+  // Held in a ref so a parent re-render cannot restart the identity check.
+  const onReadyRef = useRef(onReady);
+  onReadyRef.current = onReady;
+
   const [stage, setStage] = useState<Stage>("checking");
   const [server, setServer] = useState<ServerIdentity | null>(null);
   const [pending, setPending] = useState<Pending | null>(null);
@@ -58,7 +68,12 @@ export default function IdentitySetup({ wcaUserId }: { wcaUserId: number }) {
       }
 
       const mine = await exportPublicKey(local.publicKey);
-      setStage(sameBytes(mine, fromBase64(remote.publicKey ?? "")) ? "ready" : "mismatch");
+      if (!sameBytes(mine, fromBase64(remote.publicKey ?? ""))) {
+        setStage("mismatch");
+        return;
+      }
+      setStage("ready");
+      onReadyRef.current(local);
     })();
   }, [wcaUserId]);
 
@@ -106,8 +121,9 @@ export default function IdentitySetup({ wcaUserId }: { wcaUserId: number }) {
 
       await saveIdentity(wcaUserId, pending.keys);
       await requestPersistence();
-      setPending(null);
       setStage("ready");
+      onReadyRef.current(pending.keys);
+      setPending(null);
     } catch {
       setError("Could not register the key. Nothing was saved — try again.");
     } finally {
@@ -136,6 +152,7 @@ export default function IdentitySetup({ wcaUserId }: { wcaUserId: number }) {
       await requestPersistence();
       setPhraseInput("");
       setStage("ready");
+      onReadyRef.current({ privateKey, publicKey });
     } catch {
       setError("That recovery phrase was not accepted.");
     } finally {

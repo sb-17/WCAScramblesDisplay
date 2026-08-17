@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { readSession } from "@/lib/session";
-import IdentitySetup from "./identity-setup";
+import DashboardClient from "./dashboard-client";
 
 function readableRank(status: string): string {
   return status
@@ -23,14 +23,7 @@ export default async function Dashboard() {
         </div>
       </div>
 
-      <IdentitySetup wcaUserId={session.wcaUserId} />
-
-      <div className="card stack">
-        <h2>Competitions</h2>
-        <p className="muted">
-          Nothing here yet. Uploading an archive and pairing display devices come next.
-        </p>
-      </div>
+      <DashboardClient wcaUserId={session.wcaUserId} />
 
       <form action="/api/auth/logout" method="post">
         <button className="button" type="submit">

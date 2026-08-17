@@ -162,6 +162,19 @@ a:focus-visible {
   gap: 0.625rem;
 }
 
+.listitem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.875rem 0;
+  border-top: 1px solid var(--border);
+}
+
+.listitem:last-child {
+  padding-bottom: 0;
+}
+
 .input {
   width: 100%;
   min-height: 3rem;
