@@ -331,6 +331,34 @@ a:focus-visible {
   text-align: center;
 }
 
+/* Once a sheet is up it should fill the screen and scroll, not sit centred in a box. */
+.display-body--sheet {
+  display: block;
+  padding: 0;
+  overflow-y: auto;
+  text-align: left;
+}
+
+.pdf-host {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+}
+
+/*
+ * White, and deliberately never inverted: Megaminx, Square-1, Clock and Pyraminx sheets
+ * carry colour-coded diagrams that inverting would corrupt.
+ */
+.pdf-page {
+  width: 100%;
+  max-width: 60rem;
+  height: auto;
+  background: #fff;
+  border-radius: 4px;
+}
+
 /*
  * The native file input cannot be styled, so it is hidden and the label acts as the
  * control. The input keeps focus, so the focus ring is forwarded onto the visible part.

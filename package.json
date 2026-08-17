@@ -12,13 +12,17 @@
     "selftest:zip": "tsx src/scrambles/selftest.ts",
     "selftest:crypto": "tsx src/lib/crypto.selftest.ts",
     "migrate": "tsx --env-file=.env.local src/db/migrate.ts",
-    "dev:https": "next dev --experimental-https"
+    "dev:https": "next dev --experimental-https",
+    "predev": "node scripts/copy-pdf-worker.mjs",
+    "predev:https": "node scripts/copy-pdf-worker.mjs",
+    "prebuild": "node scripts/copy-pdf-worker.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
     "@zip.js/zip.js": "^2.8.51",
     "jose": "^6.2.9",
     "next": "^16.3.1",
+    "pdfjs-dist": "^6.2.108",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },

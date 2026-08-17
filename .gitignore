@@ -10,3 +10,6 @@ next-env.d.ts
 *.zip
 
 certificates
+
+# Copied from pdfjs-dist on predev/prebuild, so it stays in step with the installed version.
+public/pdf.worker.min.mjs

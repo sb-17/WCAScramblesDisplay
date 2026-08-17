@@ -23,6 +23,7 @@ import {
 import { webCryptoAvailable } from "@/lib/webcrypto";
 import { unpackSet } from "@/scrambles/payload";
 import InsecureContext from "../insecure-context";
+import PdfView from "./pdf-view";
 
 const POLL_VISIBLE_MS = 3_000;
 const POLL_HIDDEN_MS = 15_000;
@@ -50,9 +51,12 @@ export default function DisplayClient() {
 
   const [state, setState] = useState<State | null>(null);
   const [caching, setCaching] = useState<{ done: number; total: number } | null>(null);
-  const [showing, setShowing] = useState<{ setId: string; label: string; pages: number } | null>(
-    null,
-  );
+  const [showing, setShowing] = useState<{
+    setId: string;
+    label: string;
+    pdf: Uint8Array;
+    passcode: string;
+  } | null>(null);
   const [showError, setShowError] = useState<string | null>(null);
   const [offline, setOffline] = useState(false);
 
@@ -233,10 +237,10 @@ export default function DisplayClient() {
         const setKey = await importDataKey(
           await unwrapWithPrivateKey(fromBase64(state.wrappedSetKey), keys.privateKey),
         );
-        const { pdf } = unpackSet(await decryptData(setKey, ciphertext));
+        const { pdf, passcode } = unpackSet(await decryptData(setKey, ciphertext));
 
         setShowError(null);
-        setShowing({ setId: state.setId, label: state.label ?? "", pages: pdf.byteLength });
+        setShowing({ setId: state.setId, label: state.label ?? "", pdf, passcode });
         await ack(token, state.setId);
       } catch (err) {
         setShowing(null);
@@ -312,14 +316,11 @@ export default function DisplayClient() {
         </div>
       </header>
 
-      <section className="display-body">
+      <section className={showing ? "display-body display-body--sheet" : "display-body"}>
         {showError ? <p className="notice">{showError}</p> : null}
         {!showError && !showing ? <p className="muted">Waiting for a scramble set…</p> : null}
         {showing ? (
-          <p className="muted">
-            {showing.label} is decrypted and ready ({Math.round(showing.pages / 1024)} kB).
-            Rendering comes next.
-          </p>
+          <PdfView key={showing.setId} pdf={showing.pdf} passcode={showing.passcode} />
         ) : null}
       </section>
     </main>
