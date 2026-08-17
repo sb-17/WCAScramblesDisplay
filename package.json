@@ -10,9 +10,11 @@
     "build": "next build",
     "start": "next start",
     "selftest:zip": "tsx src/scrambles/selftest.ts",
-    "selftest:crypto": "tsx src/lib/crypto.selftest.ts"
+    "selftest:crypto": "tsx src/lib/crypto.selftest.ts",
+    "migrate": "tsx --env-file=.env.local src/db/migrate.ts"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^1.1.0",
     "@zip.js/zip.js": "^2.8.51",
     "jose": "^6.2.9",
     "next": "^16.3.1",
