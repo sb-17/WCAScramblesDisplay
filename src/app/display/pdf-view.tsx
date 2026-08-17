@@ -18,6 +18,7 @@ export default function PdfView({ pdf, passcode }: { pdf: Uint8Array; passcode: 
   const hostRef = useRef<HTMLDivElement>(null);
   // Teardown lives on the loading task in pdf.js 6, not on the document proxy.
   const taskRef = useRef<PDFDocumentLoadingTask | null>(null);
+  const [status, setStatus] = useState<string | null>("Opening the scramble sheet…");
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -25,11 +26,22 @@ export default function PdfView({ pdf, passcode }: { pdf: Uint8Array; passcode: 
     let observer: ResizeObserver | null = null;
     let renderToken = 0;
 
-    void (async () => {
-      const pdfjs = await import("pdfjs-dist");
-      pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
+    /** The host can be zero-width for a frame after layout, so wait rather than give up. */
+    const widthOf = async (host: HTMLDivElement): Promise<number> => {
+      for (let attempt = 0; attempt < 30; attempt += 1) {
+        if (host.clientWidth > 0) return host.clientWidth;
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+        if (cancelled) return 0;
+      }
+      return 0;
+    };
 
+    void (async () => {
       try {
+        const pdfjs = await import("pdfjs-dist");
+        pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
+        if (cancelled) return;
+
         // pdf.js takes ownership of the buffer it is handed, so give it a copy -- the
         // original is kept so a resize can re-render without re-fetching.
         const task = pdfjs.getDocument({ data: pdf.slice(), password: passcode });
@@ -40,16 +52,25 @@ export default function PdfView({ pdf, passcode }: { pdf: Uint8Array; passcode: 
 
         const draw = async () => {
           const host = hostRef.current;
-          if (!host) return;
+          if (!host) {
+            setError("The page has nowhere to draw the sheet.");
+            return;
+          }
 
           const token = ++renderToken;
-          const width = host.clientWidth;
-          if (width === 0) return;
+          const width = await widthOf(host);
+          if (cancelled || token !== renderToken) return;
+          if (width === 0) {
+            setError("The display area has no width, so nothing could be drawn.");
+            return;
+          }
 
           const ratio = Math.min(window.devicePixelRatio || 1, MAX_PIXEL_RATIO);
           const canvases: HTMLCanvasElement[] = [];
 
           for (let number = 1; number <= doc.numPages; number += 1) {
+            setStatus(`Drawing page ${number} of ${doc.numPages}…`);
+
             const page = await doc.getPage(number);
             if (cancelled || token !== renderToken) return;
 
@@ -57,8 +78,8 @@ export default function PdfView({ pdf, passcode }: { pdf: Uint8Array; passcode: 
             const viewport = page.getViewport({ scale: (width / unscaled.width) * ratio });
 
             const canvas = document.createElement("canvas");
-            canvas.width = viewport.width;
-            canvas.height = viewport.height;
+            canvas.width = Math.floor(viewport.width);
+            canvas.height = Math.floor(viewport.height);
             canvas.className = "pdf-page";
             await page.render({ canvas, viewport }).promise;
             if (cancelled || token !== renderToken) return;
@@ -68,6 +89,7 @@ export default function PdfView({ pdf, passcode }: { pdf: Uint8Array; passcode: 
 
           // Swapped in together so a re-render never shows a half-drawn document.
           host.replaceChildren(...canvases);
+          setStatus(null);
         };
 
         await draw();
@@ -76,7 +98,7 @@ export default function PdfView({ pdf, passcode }: { pdf: Uint8Array; passcode: 
         observer = new ResizeObserver(() => void draw());
         if (hostRef.current) observer.observe(hostRef.current);
       } catch (err) {
-        if (!cancelled) setError((err as Error).message);
+        if (!cancelled) setError((err as Error).message || String(err));
       }
     })();
 
@@ -88,13 +110,15 @@ export default function PdfView({ pdf, passcode }: { pdf: Uint8Array; passcode: 
     };
   }, [pdf, passcode]);
 
-  if (error) {
-    return (
-      <div className="notice">
-        <p>Could not draw this scramble sheet: {error}</p>
-      </div>
-    );
-  }
-
-  return <div className="pdf-host" ref={hostRef} />;
+  return (
+    <>
+      {error ? (
+        <div className="notice" style={{ margin: "1.25rem" }}>
+          <p>Could not draw this scramble sheet: {error}</p>
+        </div>
+      ) : null}
+      {status && !error ? <p className="muted" style={{ padding: "1.25rem" }}>{status}</p> : null}
+      <div className="pdf-host" ref={hostRef} />
+    </>
+  );
 }

@@ -336,6 +336,9 @@ a:focus-visible {
   display: block;
   padding: 0;
   overflow-y: auto;
+  /* A column flex item will not shrink below its content without this, so it would
+     overflow the viewport instead of scrolling inside itself. */
+  min-height: 0;
   text-align: left;
 }
 

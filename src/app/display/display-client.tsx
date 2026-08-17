@@ -126,7 +126,12 @@ export default function DisplayClient() {
     }
   }
 
-  async function unpair() {
+  /**
+   * There is no unpair control on this screen on purpose: a display in the scrambling area
+   * should not be able to take itself out of service. It returns to the code screen only
+   * when the Delegate removes it or the session ends, which the server reports as a 401.
+   */
+  const resetToPairing = useCallback(async () => {
     await clearCache();
     forgetToken();
     keysRef.current = null;
@@ -134,7 +139,8 @@ export default function DisplayClient() {
     setToken(null);
     setState(null);
     setShowing(null);
-  }
+    setShowError(null);
+  }, []);
 
   /** Downloads every set as ciphertext so a flaky network cannot stop a scramble appearing. */
   const fillCache = useCallback(async (bearer: string) => {
@@ -183,9 +189,9 @@ export default function DisplayClient() {
           headers: { authorization: `Bearer ${token}` },
         });
         if (response.status === 401) {
-          setOffline(false);
-          setState(null);
-          setShowError("This device's session has ended. Pair it again.");
+          // Removed by the Delegate, or the session expired. Wipe the cached scrambles and
+          // go back to the code screen rather than sitting on a sheet we can no longer hold.
+          await resetToPairing();
           return;
         }
         if (response.ok) {
@@ -208,7 +214,7 @@ export default function DisplayClient() {
       stopped = true;
       clearTimeout(timer);
     };
-  }, [token]);
+  }, [token, resetToPairing]);
 
   // Decrypts whatever has been pushed. The key arrives with the push and covers only this
   // set, so nothing else in the cache becomes readable.
@@ -310,9 +316,6 @@ export default function DisplayClient() {
               Downloading {caching.done}/{caching.total}
             </span>
           ) : null}
-          <button type="button" className="button" onClick={() => void unpair()}>
-            Unpair
-          </button>
         </div>
       </header>
 
