@@ -23,9 +23,15 @@ export default async function Dashboard() {
             {session.wcaId ? <span className="tag mono">{session.wcaId}</span> : null}
           </div>
         </div>
-        <a className="tag" href="/settings">
-          Settings
-        </a>
+        <div className="row">
+          {/* Signed in, "/" redirects here, so without this a logged-in tablet is stranded. */}
+          <a className="tag" href="/display">
+            Display
+          </a>
+          <a className="tag" href="/settings">
+            Settings
+          </a>
+        </div>
       </div>
 
       <DashboardClient wcaUserId={session.wcaUserId} />

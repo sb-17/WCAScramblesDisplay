@@ -217,6 +217,8 @@ export default function CompetitionClient({
         competitionKey={competitionKey}
       />
 
+      <Delegates competitionId={competitionId} competitionKey={competitionKey} />
+
       {!keys ? (
         <div className="notice">
           <p>
@@ -322,9 +324,7 @@ export default function CompetitionClient({
         </div>
       )}
 
-      <Delegates competitionId={competitionId} competitionKey={competitionKey} />
-
-      {/* Last, and collapsed: this list runs to dozens of rows on a real competition. */}
+      {/* Upload sits next to the set list it fills, and both stay below the live controls. */}
       <details className="card collapse">
         <summary>
           <h2>

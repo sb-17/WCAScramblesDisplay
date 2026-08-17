@@ -300,6 +300,14 @@ export default function DisplayClient() {
               <p>{pairError}</p>
             </div>
           ) : null}
+
+          {/*
+            Only offered before pairing. Once a display is in service it deliberately has no
+            way out of this screen, so a scrambler cannot navigate away from what was pushed.
+          */}
+          <a className="muted" href="/" style={{ fontSize: "0.875rem", textAlign: "center" }}>
+            Delegate sign-in
+          </a>
         </div>
       </main>
     );

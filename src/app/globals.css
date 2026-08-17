@@ -96,6 +96,9 @@ a {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 1.25rem;
+  /* Nothing inside a card should be able to widen the page. */
+  min-width: 0;
+  overflow-wrap: break-word;
 }
 
 /* Tap targets stay large -- this gets used one-handed while holding a clipboard. */
@@ -221,6 +224,24 @@ a:focus-visible {
   flex: 1 1 12rem;
   max-width: 22rem;
   width: auto;
+  /*
+   * A select is as wide as its longest option, and a flex item will not shrink below its
+   * content without this. Scramble set labels are long, so on a phone the control pushed
+   * itself off the side of the screen.
+   */
+  min-width: 0;
+}
+
+select.input {
+  max-width: 100%;
+  text-overflow: ellipsis;
+}
+
+/* Long labels must wrap rather than force a row wider than the card. */
+.listitem > div,
+.block-head > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .collapse > summary {

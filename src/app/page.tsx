@@ -41,6 +41,22 @@ export default async function Home({
       <p className="muted" style={{ fontSize: "0.875rem" }}>
         Delegates only. Scrambles are encrypted in your browser before upload.
       </p>
+
+      {/*
+        The way in for a scrambling-area tablet. Installed to a home screen there is no
+        address bar, so without this the display page cannot be reached at all.
+      */}
+      <div className="listitem">
+        <div>
+          <div>Setting up a display?</div>
+          <div className="muted" style={{ fontSize: "0.875rem" }}>
+            No sign-in needed — just the code from a Delegate.
+          </div>
+        </div>
+        <a className="button" href="/display">
+          Open display
+        </a>
+      </div>
     </main>
   );
 }
