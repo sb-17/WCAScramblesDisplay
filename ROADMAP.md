@@ -186,8 +186,10 @@ ugly row in a table.
 
 - **Audit log.** `push_log` is written on every push but nothing reads it yet.
 - **Auto-purge.** `ends_on` is stored for it; the job that acts on it does not exist.
-- **PWA.** The original brief called for an installable app. There is no manifest or
-  service worker yet, so the display runs as an ordinary browser tab.
+- **Offline start.** The app is installable — manifest, standalone display, home-screen
+  icon — but there is no service worker, so it still needs the network to open. Once a
+  display is running it holds its scrambles locally and a dropped connection only delays
+  the next push.
 - **WCA event ordering.** Sets sort alphabetically by TNoodle's event name rather than in
   official event order, which needs a TNoodle-name to WCA-event mapping.
 

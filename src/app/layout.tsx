@@ -5,6 +5,8 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "WCA Scrambles Display",
   description: "Show scramble sets on the scrambling-area display without typing passcodes.",
+  // iOS needs this as well as the manifest to run without Safari's chrome.
+  appleWebApp: { capable: true, title: "Scrambles", statusBarStyle: "black" },
 };
 
 export const viewport: Viewport = {
