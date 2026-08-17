@@ -6,6 +6,7 @@
  *   npm run selftest
  */
 import { BlobWriter, TextReader, Uint8ArrayReader, ZipWriter, configure } from "@zip.js/zip.js";
+import { isFewestMoves } from "./events";
 import { parseScrambleZip } from "./parse";
 import { packSet, unpackSet } from "./payload";
 
@@ -87,6 +88,19 @@ try {
   console.log("  FAIL: no error raised");
 } catch (err) {
   console.log(`  ok: ${(err as Error).message}`);
+}
+
+console.log("\n--- fewest moves detection ---");
+for (const [label, expected] of [
+  ["3x3x3 Fewest Moves Round 1 Scramble Set A", true],
+  ["3x3x3 Fewest Moves Round 1 Attempt 2", true],
+  ["FMC Round 1 Scramble Set A", true],
+  ["3x3x3 Round 1 Scramble Set A", false],
+  ["3x3x3 Blindfolded Round 2 Scramble Set A", false],
+  ["Megaminx Round 1 Scramble Set A", false],
+] as const) {
+  const actual = isFewestMoves(label);
+  console.log(`  ${actual === expected ? "ok  " : "FAIL"}  ${label} -> ${actual}`);
 }
 
 // PDF bytes are arbitrary, so the pack format must survive a payload that happens to

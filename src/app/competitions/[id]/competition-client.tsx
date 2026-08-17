@@ -10,8 +10,10 @@ import {
   unwrapWithPrivateKey,
 } from "@/lib/crypto";
 import { loadIdentity } from "@/lib/identity-store";
+import { isFewestMoves } from "@/scrambles/events";
 import { parseScrambleZip, type ParsedScrambles } from "@/scrambles/parse";
 import { packSet } from "@/scrambles/payload";
+import Delegates from "./delegates";
 import Devices from "./devices";
 
 export interface SetRow {
@@ -115,9 +117,10 @@ export default function CompetitionClient({
 
   async function upload() {
     if (!parsed || !keys || !detail) return;
+    const uploading = parsed.sets.filter((set) => !isFewestMoves(set.label));
     setBusy(true);
     setError(null);
-    setProgress({ done: 0, total: parsed.sets.length });
+    setProgress({ done: 0, total: uploading.length });
 
     try {
       // Unwrapped here and never sent: the server holds only the wrapper.
@@ -126,7 +129,7 @@ export default function CompetitionClient({
       );
 
       let done = 0;
-      for (const set of parsed.sets) {
+      for (const set of uploading) {
         const setKey = await generateDataKey();
         const ciphertext = await encryptData(setKey, packSet(set.pdfBytes, set.passcode));
         const wrappedSetKey = await encryptData(competitionKey, await exportDataKey(setKey));
@@ -146,14 +149,14 @@ export default function CompetitionClient({
 
         if (!response.ok) {
           setError(
-            `Stopped after ${done} of ${parsed.sets.length} sets. ` +
+            `Stopped after ${done} of ${uploading.length} sets. ` +
               "Uploading again will resume — sets already stored are simply replaced.",
           );
           return;
         }
 
         done += 1;
-        setProgress({ done, total: parsed.sets.length });
+        setProgress({ done, total: uploading.length });
       }
 
       setParsed(null);
@@ -180,6 +183,11 @@ export default function CompetitionClient({
 
   const nameMismatch =
     parsed !== null && looseName(parsed.competitionName) !== looseName(detail.name);
+
+  // Filtered at import rather than at display: an FMC set that is never shown has no
+  // business being uploaded, and it would only pad the list a Delegate picks from.
+  const importable = parsed?.sets.filter((set) => !isFewestMoves(set.label)) ?? [];
+  const skipped = (parsed?.sets.length ?? 0) - importable.length;
 
   return (
     <>
@@ -258,7 +266,8 @@ export default function CompetitionClient({
                 <div>
                   <div>{parsed.competitionName}</div>
                   <div className="muted" style={{ fontSize: "0.875rem" }}>
-                    {parsed.sets.length} scramble set{parsed.sets.length === 1 ? "" : "s"}
+                    {importable.length} scramble set{importable.length === 1 ? "" : "s"}
+                    {skipped > 0 ? ` · ${skipped} Fewest Moves skipped` : ""}
                   </div>
                 </div>
               </div>
@@ -285,13 +294,14 @@ export default function CompetitionClient({
 
               <div className="row">
                 <button
+                  type="button"
                   className="button button--primary"
                   onClick={() => void upload()}
-                  disabled={busy || parsed.sets.length === 0}
+                  disabled={busy || importable.length === 0}
                 >
                   {progress
                     ? `Uploading ${progress.done} of ${progress.total}…`
-                    : `Upload ${parsed.sets.length} set${parsed.sets.length === 1 ? "" : "s"}`}
+                    : `Upload ${importable.length} set${importable.length === 1 ? "" : "s"}`}
                 </button>
                 <button className="button" onClick={() => setParsed(null)} disabled={busy}>
                   Cancel
@@ -307,6 +317,8 @@ export default function CompetitionClient({
           ) : null}
         </div>
       )}
+
+      <Delegates competitionId={competitionId} competitionKey={competitionKey} />
 
       {/* Last, and collapsed: this list runs to dozens of rows on a real competition. */}
       <details className="card collapse">
