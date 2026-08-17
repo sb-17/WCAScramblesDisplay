@@ -11,7 +11,8 @@
     "start": "next start",
     "selftest:zip": "tsx src/scrambles/selftest.ts",
     "selftest:crypto": "tsx src/lib/crypto.selftest.ts",
-    "migrate": "tsx --env-file=.env.local src/db/migrate.ts"
+    "migrate": "tsx --env-file=.env.local src/db/migrate.ts",
+    "dev:https": "next dev --experimental-https"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",

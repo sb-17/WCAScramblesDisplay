@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { webCryptoAvailable } from "@/lib/webcrypto";
+import InsecureContext from "../insecure-context";
 import Competitions from "./competitions";
 import IdentitySetup from "./identity-setup";
 
@@ -10,6 +12,11 @@ import IdentitySetup from "./identity-setup";
  */
 export default function DashboardClient({ wcaUserId }: { wcaUserId: number }) {
   const [keys, setKeys] = useState<CryptoKeyPair | null>(null);
+  const [secure, setSecure] = useState(true);
+
+  useEffect(() => setSecure(webCryptoAvailable()), []);
+
+  if (!secure) return <InsecureContext />;
 
   return (
     <div className="stack" style={{ gap: "1.5rem" }}>

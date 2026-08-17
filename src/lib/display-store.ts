@@ -12,6 +12,8 @@ const DB_VERSION = 1;
 const KEYS = "keys";
 const SETS = "sets";
 
+import { safeLocalStorage } from "./webcrypto";
+
 const TOKEN_KEY = "wcasd-display-token";
 
 function request<T>(req: IDBRequest<T>): Promise<T> {
@@ -48,15 +50,15 @@ async function withStore<T>(
 }
 
 export function readToken(): string | null {
-  return localStorage.getItem(TOKEN_KEY);
+  return safeLocalStorage()?.getItem(TOKEN_KEY) ?? null;
 }
 
 export function writeToken(token: string): void {
-  localStorage.setItem(TOKEN_KEY, token);
+  safeLocalStorage()?.setItem(TOKEN_KEY, token);
 }
 
 export function forgetToken(): void {
-  localStorage.removeItem(TOKEN_KEY);
+  safeLocalStorage()?.removeItem(TOKEN_KEY);
 }
 
 export async function loadDeviceKeys(): Promise<CryptoKeyPair | null> {

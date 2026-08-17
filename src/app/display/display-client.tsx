@@ -20,7 +20,9 @@ import {
   saveDeviceKeys,
   writeToken,
 } from "@/lib/display-store";
+import { webCryptoAvailable } from "@/lib/webcrypto";
 import { unpackSet } from "@/scrambles/payload";
+import InsecureContext from "../insecure-context";
 
 const POLL_VISIBLE_MS = 3_000;
 const POLL_HIDDEN_MS = 15_000;
@@ -40,6 +42,7 @@ interface State {
 }
 
 export default function DisplayClient() {
+  const [secure, setSecure] = useState(true);
   const [token, setToken] = useState<string | null>(null);
   const [code, setCode] = useState("");
   const [pairing, setPairing] = useState(false);
@@ -57,6 +60,7 @@ export default function DisplayClient() {
   const renderedRef = useRef<string | null>(null);
 
   useEffect(() => {
+    setSecure(webCryptoAvailable());
     setToken(readToken());
   }, []);
 
@@ -110,8 +114,9 @@ export default function DisplayClient() {
       keysRef.current = keys;
       setToken(claimed.token);
       setCode("");
-    } catch {
-      setPairError("Could not reach the server.");
+    } catch (err) {
+      // Surfaced verbatim: a generic message here hid a missing crypto.subtle for far too long.
+      setPairError(`Could not pair: ${(err as Error).message}`);
     } finally {
       setPairing(false);
     }
@@ -240,6 +245,16 @@ export default function DisplayClient() {
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state?.setId, state?.pushedAt, token]);
+
+  if (!secure) {
+    return (
+      <main className="display-pair">
+        <div style={{ maxWidth: "24rem", width: "100%" }}>
+          <InsecureContext />
+        </div>
+      </main>
+    );
+  }
 
   if (!token) {
     return (
