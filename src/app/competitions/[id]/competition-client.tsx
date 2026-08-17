@@ -14,13 +14,14 @@ import { parseScrambleZip, type ParsedScrambles } from "@/scrambles/parse";
 import { packSet } from "@/scrambles/payload";
 import Devices from "./devices";
 
-interface SetRow {
+export interface SetRow {
   id: string;
   label: string;
   eventName: string | null;
   roundNumber: number | null;
   setLetter: string | null;
   bytes: number;
+  wrappedSetKey: string;
 }
 
 interface Detail {
@@ -50,6 +51,7 @@ export default function CompetitionClient({
 }) {
   const [detail, setDetail] = useState<Detail | null>(null);
   const [keys, setKeys] = useState<CryptoKeyPair | null>(null);
+  const [competitionKey, setCompetitionKey] = useState<CryptoKey | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   const [file, setFile] = useState<File | null>(null);
@@ -75,6 +77,22 @@ export default function CompetitionClient({
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [competitionId, wcaUserId]);
+
+  // Unwrapped once and held in memory. Pushing a set needs it to reach the set key.
+  useEffect(() => {
+    if (!keys || !detail || competitionKey) return;
+    void (async () => {
+      try {
+        setCompetitionKey(
+          await importDataKey(
+            await unwrapWithPrivateKey(fromBase64(detail.wrappedCompetitionKey), keys.privateKey),
+          ),
+        );
+      } catch {
+        setLoadError("This browser's key cannot open this competition.");
+      }
+    })();
+  }, [keys, detail, competitionKey]);
 
   async function readArchive() {
     if (!file) return;
@@ -181,7 +199,11 @@ export default function CompetitionClient({
         </a>
       </div>
 
-      <Devices competitionId={competitionId} />
+      <Devices
+        competitionId={competitionId}
+        sets={detail.sets}
+        competitionKey={competitionKey}
+      />
 
       {!keys ? (
         <div className="notice">

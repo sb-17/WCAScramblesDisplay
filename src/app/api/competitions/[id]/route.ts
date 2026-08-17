@@ -18,7 +18,10 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
     endsOn: access.endsOn,
     canPush: access.canPush,
     wrappedCompetitionKey: toBase64(access.wrappedCompetitionKey),
-    sets: await listScrambleSets(id),
+    sets: (await listScrambleSets(id)).map((set) => ({
+      ...set,
+      wrappedSetKey: toBase64(set.wrappedSetKey),
+    })),
   });
 }
 

@@ -1,4 +1,4 @@
-import { db, rows, toBytea } from "./client";
+import { db, fromBytea, rows, toBytea } from "./client";
 
 export interface ScrambleSetRow {
   id: string;
@@ -7,6 +7,8 @@ export interface ScrambleSetRow {
   roundNumber: number | null;
   setLetter: string | null;
   bytes: number;
+  /** Set key under the competition key. Only a Delegate holding that key can open it. */
+  wrappedSetKey: Uint8Array<ArrayBuffer>;
 }
 
 export interface ScrambleSetInput {
@@ -50,9 +52,10 @@ export async function listScrambleSets(competitionId: string): Promise<ScrambleS
     round_number: number | null;
     set_letter: string | null;
     bytes: string;
+    wrapped_set_key: unknown;
   }>(sql`
     select id, label, event_name, round_number, set_letter,
-           length(ciphertext) as bytes
+           length(ciphertext) as bytes, wrapped_set_key
       from scramble_sets
      where competition_id = ${competitionId}
      order by event_name nulls last, round_number nulls last, set_letter nulls last, label
@@ -65,5 +68,21 @@ export async function listScrambleSets(competitionId: string): Promise<ScrambleS
     roundNumber: row.round_number,
     setLetter: row.set_letter,
     bytes: Number(row.bytes),
+    wrappedSetKey: fromBytea(row.wrapped_set_key),
   }));
+}
+
+/** The encrypted set itself, for a display device to cache ahead of time. */
+export async function getCiphertext(
+  competitionId: string,
+  setId: string,
+): Promise<Uint8Array<ArrayBuffer> | null> {
+  const sql = db();
+  const found = await rows<{ ciphertext: unknown }>(sql`
+    select ciphertext from scramble_sets
+     where id = ${setId} and competition_id = ${competitionId}
+  `);
+
+  const row = found[0];
+  return row ? fromBytea(row.ciphertext) : null;
 }

@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from "node:crypto";
-import { db, rows, toBytea } from "./client";
+import { db, fromBytea, rows, toBytea } from "./client";
 
 /** Crockford base32 again: unambiguous when read off a phone and typed on a tablet. */
 const CODE_ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
@@ -15,6 +15,12 @@ export interface DeviceRow {
   pairedAt: string | null;
   sessionExpiresAt: string | null;
   lastSeenAt: string | null;
+  /** Needed by the Delegate's browser to wrap a set key to this device. */
+  publicKey: Uint8Array<ArrayBuffer> | null;
+  /** What was sent, versus what the device says it is actually showing. */
+  currentSetId: string | null;
+  ackedSetId: string | null;
+  ackedAt: string | null;
 }
 
 export function normaliseCode(code: string): string {
@@ -61,7 +67,8 @@ export async function createDevice(input: {
          ${input.createdBy})
       on conflict (activation_code) do nothing
       returning id, name, activation_code, code_expires_at, paired_at,
-                session_expires_at, last_seen_at
+                session_expires_at, last_seen_at, public_key,
+                current_set_id, acked_set_id, acked_at
     `);
 
     const row = inserted[0];
@@ -75,7 +82,8 @@ export async function listDevices(competitionId: string): Promise<DeviceRow[]> {
   const sql = db();
   const found = await rows<DeviceRecord>(sql`
     select id, name, activation_code, code_expires_at, paired_at,
-           session_expires_at, last_seen_at
+           session_expires_at, last_seen_at, public_key,
+           current_set_id, acked_set_id, acked_at
       from devices
      where competition_id = ${competitionId}
      order by created_at
@@ -163,6 +171,132 @@ export async function claimDevice(
   };
 }
 
+export interface AuthenticatedDevice {
+  deviceId: string;
+  deviceName: string;
+  competitionId: string;
+  publicKey: Uint8Array<ArrayBuffer>;
+}
+
+/**
+ * Authenticates a display device by its bearer token. An expired session fails exactly like
+ * a bad token: the device is simply no longer allowed to ask for anything.
+ */
+export async function authenticateDevice(
+  request: Request,
+): Promise<AuthenticatedDevice | null> {
+  const header = request.headers.get("authorization") ?? "";
+  const token = header.startsWith("Bearer ") ? header.slice(7) : "";
+  if (!token) return null;
+
+  const sql = db();
+  const found = await rows<{
+    id: string;
+    name: string;
+    competition_id: string;
+    public_key: unknown;
+  }>(sql`
+    select id, name, competition_id, public_key
+      from devices
+     where token_hash = ${hashToken(token)}
+       and session_expires_at > now()
+  `);
+
+  const row = found[0];
+  if (!row) return null;
+
+  await sql`update devices set last_seen_at = now() where id = ${row.id}`;
+
+  return {
+    deviceId: row.id,
+    deviceName: row.name,
+    competitionId: row.competition_id,
+    publicKey: fromBytea(row.public_key),
+  };
+}
+
+export interface DeviceState {
+  setId: string | null;
+  label: string | null;
+  wrappedSetKey: Uint8Array<ArrayBuffer> | null;
+  pushedAt: string | null;
+}
+
+export async function readDeviceState(deviceId: string): Promise<DeviceState | null> {
+  const sql = db();
+  const found = await rows<{
+    current_set_id: string | null;
+    current_wrapped_key: unknown;
+    pushed_at: string | null;
+    label: string | null;
+  }>(sql`
+    select d.current_set_id, d.current_wrapped_key, d.pushed_at, s.label
+      from devices d
+      left join scramble_sets s on s.id = d.current_set_id
+     where d.id = ${deviceId}
+  `);
+
+  const row = found[0];
+  if (!row) return null;
+
+  return {
+    setId: row.current_set_id,
+    label: row.label,
+    wrappedSetKey: row.current_wrapped_key ? fromBytea(row.current_wrapped_key) : null,
+    pushedAt: row.pushed_at,
+  };
+}
+
+export async function acknowledgeState(deviceId: string, setId: string | null): Promise<void> {
+  const sql = db();
+  await sql`
+    update devices
+       set acked_set_id = ${setId}, acked_at = now(), last_seen_at = now()
+     where id = ${deviceId}
+  `;
+}
+
+/**
+ * Pushes a set to a device, or clears its screen when setId is null. The previous wrapped
+ * key is overwritten either way, so the device loses access to whatever it was showing.
+ */
+export async function pushToDevice(input: {
+  competitionId: string;
+  deviceId: string;
+  setId: string | null;
+  wrappedSetKey: Uint8Array | null;
+  pushedBy: number;
+}): Promise<boolean> {
+  const sql = db();
+  const updated = await rows<{ name: string }>(sql`
+    update devices
+       set current_set_id = ${input.setId},
+           current_wrapped_key = ${input.wrappedSetKey ? toBytea(input.wrappedSetKey) : null},
+           pushed_at = now()
+     where id = ${input.deviceId}
+       and competition_id = ${input.competitionId}
+       and paired_at is not null
+       and session_expires_at > now()
+    returning name
+  `);
+
+  const device = updated[0];
+  if (!device) return false;
+
+  const label = input.setId
+    ? await rows<{ label: string }>(sql`
+        select label from scramble_sets where id = ${input.setId}
+      `)
+    : [];
+
+  await sql`
+    insert into push_log (competition_id, device_name, set_label, pushed_by)
+    values (${input.competitionId}, ${device.name}, ${label[0]?.label ?? null}, ${input.pushedBy})
+  `;
+
+  return true;
+}
+
 interface DeviceRecord {
   id: string;
   name: string;
@@ -171,6 +305,10 @@ interface DeviceRecord {
   paired_at: string | null;
   session_expires_at: string | null;
   last_seen_at: string | null;
+  public_key: unknown;
+  current_set_id: string | null;
+  acked_set_id: string | null;
+  acked_at: string | null;
 }
 
 function toDevice(row: DeviceRecord): DeviceRow {
@@ -182,5 +320,9 @@ function toDevice(row: DeviceRecord): DeviceRow {
     pairedAt: row.paired_at,
     sessionExpiresAt: row.session_expires_at,
     lastSeenAt: row.last_seen_at,
+    publicKey: row.public_key ? fromBytea(row.public_key) : null,
+    currentSetId: row.current_set_id,
+    ackedSetId: row.acked_set_id,
+    ackedAt: row.acked_at,
   };
 }

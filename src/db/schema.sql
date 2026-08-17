@@ -117,6 +117,33 @@ create table if not exists devices (
 
 create index if not exists devices_competition_idx on devices (competition_id);
 
+-- What each device is showing. Added separately so existing databases pick it up.
+--
+-- current_wrapped_key is the set key wrapped to this device's public key, and it is
+-- replaced on every push. A device therefore holds a key only for what is on screen right
+-- now: a lost tablet leaks one group, not the weekend.
+alter table devices add column if not exists current_set_id uuid
+  references scramble_sets (id) on delete set null;
+alter table devices add column if not exists current_wrapped_key bytea;
+alter table devices add column if not exists pushed_at timestamptz;
+
+-- What the device says it is showing, which is what the Delegate's phone displays. The
+-- intended state and the real state are not the same thing.
+alter table devices add column if not exists acked_set_id uuid;
+alter table devices add column if not exists acked_at timestamptz;
+
+-- Names are denormalised so the log survives deleting a device or a competition's sets.
+create table if not exists push_log (
+  id              uuid primary key default gen_random_uuid(),
+  competition_id  uuid not null references competitions (id) on delete cascade,
+  device_name     text not null,
+  set_label       text,
+  pushed_by       integer not null references users (wca_user_id),
+  pushed_at       timestamptz not null default now()
+);
+
+create index if not exists push_log_competition_idx on push_log (competition_id, pushed_at desc);
+
 -- Applied separately so databases created before unofficial competitions existed pick the
 -- change up. Dropping a constraint that is already absent is a no-op, so this stays
 -- re-runnable like everything else above.

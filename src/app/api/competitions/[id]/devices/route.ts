@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { accessTo } from "@/db/competitions";
 import { createDevice, listDevices } from "@/db/devices";
+import { toBase64 } from "@/lib/bytes";
 import { readSession } from "@/lib/session";
 
 const MAX_SESSION_HOURS = 72;
@@ -14,7 +15,13 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
     return NextResponse.json({ error: "not-found" }, { status: 404 });
   }
 
-  return NextResponse.json({ devices: await listDevices(id) });
+  const devices = await listDevices(id);
+  return NextResponse.json({
+    devices: devices.map((device) => ({
+      ...device,
+      publicKey: device.publicKey ? toBase64(device.publicKey) : null,
+    })),
+  });
 }
 
 export async function POST(request: Request, context: { params: Promise<{ id: string }> }) {

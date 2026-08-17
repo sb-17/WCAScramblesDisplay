@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { fromBase64, toBase64 } from "@/lib/bytes";
+import { decryptData, importPublicKey, wrapToPublicKey } from "@/lib/crypto";
+import type { SetRow } from "./competition-client";
 
 interface Device {
   id: string;
@@ -10,6 +13,10 @@ interface Device {
   pairedAt: string | null;
   sessionExpiresAt: string | null;
   lastSeenAt: string | null;
+  publicKey: string | null;
+  currentSetId: string | null;
+  ackedSetId: string | null;
+  ackedAt: string | null;
 }
 
 const DEFAULT_HOURS = 12;
@@ -26,7 +33,20 @@ function until(iso: string | null): string {
 
 const isExpired = (iso: string | null) => iso !== null && new Date(iso).getTime() <= Date.now();
 
-export default function Devices({ competitionId }: { competitionId: string }) {
+const labelOf = (sets: SetRow[], setId: string) =>
+  sets.find((set) => set.id === setId)?.label ?? "a set that has since been removed";
+
+export default function Devices({
+  competitionId,
+  sets,
+  competitionKey,
+}: {
+  competitionId: string;
+  sets: SetRow[];
+  competitionKey: CryptoKey | null;
+}) {
+  const [chosen, setChosen] = useState<Record<string, string>>({});
+  const [allChoice, setAllChoice] = useState("");
   const [devices, setDevices] = useState<Device[] | null>(null);
   const [name, setName] = useState("");
   const [hours, setHours] = useState(String(DEFAULT_HOURS));
@@ -97,6 +117,57 @@ export default function Devices({ competitionId }: { competitionId: string }) {
     }
   }
 
+  /**
+   * The set key is unwrapped here and re-wrapped to this device's public key. The server
+   * relays the wrapper and never sees the key itself.
+   */
+  async function push(device: Device, setId: string | null) {
+    if (!device.publicKey) return;
+    setBusy(true);
+    setError(null);
+    try {
+      let wrappedSetKey: string | null = null;
+
+      if (setId !== null) {
+        if (!competitionKey) {
+          setError("This browser's key is not ready yet.");
+          return;
+        }
+        const set = sets.find((candidate) => candidate.id === setId);
+        if (!set) return;
+
+        const setKey = await decryptData(competitionKey, fromBase64(set.wrappedSetKey));
+        wrappedSetKey = toBase64(
+          await wrapToPublicKey(setKey, await importPublicKey(fromBase64(device.publicKey))),
+        );
+      }
+
+      const response = await fetch(
+        `/api/competitions/${competitionId}/devices/${device.id}/push`,
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ setId, wrappedSetKey }),
+        },
+      );
+      if (!response.ok) {
+        setError(`Could not reach ${device.name}. Is it still paired?`);
+        return;
+      }
+      await refresh();
+    } catch {
+      setError("Could not push that set.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function pushToAll(setId: string | null) {
+    for (const device of devices ?? []) {
+      if (device.pairedAt && !isExpired(device.sessionExpiresAt)) await push(device, setId);
+    }
+  }
+
   function status(device: Device): string {
     if (device.activationCode) {
       return isExpired(device.codeExpiresAt)
@@ -126,6 +197,49 @@ export default function Devices({ competitionId }: { competitionId: string }) {
                 {device.activationCode}
               </p>
             ) : null}
+
+            {/* What the device says it is showing, not what we asked it to show. */}
+            {device.pairedAt && !isExpired(device.sessionExpiresAt) ? (
+              <>
+                <div style={{ marginTop: "0.5rem" }}>
+                  {device.ackedSetId
+                    ? `Showing: ${labelOf(sets, device.ackedSetId)}`
+                    : "Screen is clear"}
+                  {device.currentSetId !== device.ackedSetId ? " · not confirmed yet" : ""}
+                </div>
+                <div className="row" style={{ marginTop: "0.5rem", flexWrap: "wrap" }}>
+                  <select
+                    className="input"
+                    style={{ maxWidth: "18rem" }}
+                    value={chosen[device.id] ?? ""}
+                    onChange={(event) =>
+                      setChosen({ ...chosen, [device.id]: event.target.value })
+                    }
+                  >
+                    <option value="">Choose a scramble set…</option>
+                    {sets.map((set) => (
+                      <option key={set.id} value={set.id}>
+                        {set.label}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    className="button button--primary"
+                    onClick={() => void push(device, chosen[device.id] ?? null)}
+                    disabled={busy || !chosen[device.id]}
+                  >
+                    Show
+                  </button>
+                  <button
+                    className="button button--danger"
+                    onClick={() => void push(device, null)}
+                    disabled={busy || !device.ackedSetId}
+                  >
+                    Clear
+                  </button>
+                </div>
+              </>
+            ) : null}
           </div>
           <div className="row">
             {device.pairedAt ? (
@@ -143,6 +257,41 @@ export default function Devices({ competitionId }: { competitionId: string }) {
           </div>
         </div>
       ))}
+
+      {(devices ?? []).some((d) => d.pairedAt && !isExpired(d.sessionExpiresAt)) ? (
+        <div className="listitem stack" style={{ gap: "0.75rem" }}>
+          <div>All devices at once</div>
+          <div className="row" style={{ flexWrap: "wrap" }}>
+            <select
+              className="input"
+              style={{ maxWidth: "18rem" }}
+              value={allChoice}
+              onChange={(event) => setAllChoice(event.target.value)}
+            >
+              <option value="">Choose a scramble set…</option>
+              {sets.map((set) => (
+                <option key={set.id} value={set.id}>
+                  {set.label}
+                </option>
+              ))}
+            </select>
+            <button
+              className="button button--primary"
+              onClick={() => void pushToAll(allChoice)}
+              disabled={busy || !allChoice}
+            >
+              Show on all
+            </button>
+            <button
+              className="button button--danger"
+              onClick={() => void pushToAll(null)}
+              disabled={busy}
+            >
+              Clear all
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       <div className="listitem stack" style={{ gap: "0.75rem" }}>
         <input
