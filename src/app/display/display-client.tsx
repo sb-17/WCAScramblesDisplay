@@ -253,10 +253,17 @@ export default function DisplayClient() {
             onChange={(event) => setCode(event.target.value)}
             placeholder="XXXXXXXX"
             autoComplete="off"
+            autoCapitalize="characters"
+            autoCorrect="off"
             spellCheck={false}
+            enterKeyHint="go"
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && code.trim().length > 0) void pair();
+            }}
             style={{ fontSize: "1.5rem", textAlign: "center", letterSpacing: "0.15em" }}
           />
           <button
+            type="button"
             className="button button--primary"
             onClick={() => void pair()}
             disabled={pairing || code.trim().length === 0}
@@ -284,7 +291,7 @@ export default function DisplayClient() {
               Downloading {caching.done}/{caching.total}
             </span>
           ) : null}
-          <button className="button" onClick={() => void unpair()}>
+          <button type="button" className="button" onClick={() => void unpair()}>
             Unpair
           </button>
         </div>

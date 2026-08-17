@@ -114,10 +114,22 @@ a {
   font-weight: 500;
   text-decoration: none;
   cursor: pointer;
+  /* iOS restyles buttons and delays taps without these. */
+  -webkit-appearance: none;
+  appearance: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
 
-.button:hover {
+.button:hover:not(:disabled) {
   background: var(--card-hover);
+}
+
+/* Without this a disabled button is indistinguishable from a working one. */
+.button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .button--primary {
@@ -127,7 +139,7 @@ a {
   font-weight: 600;
 }
 
-.button--primary:hover {
+.button--primary:hover:not(:disabled) {
   background: #6fd3e7;
 }
 
@@ -184,6 +196,10 @@ a:focus-visible {
   background: var(--bg);
   color: var(--text);
   font: inherit;
+  /* Anything under 16px makes iOS zoom the page when the field is focused. */
+  font-size: max(1rem, 16px);
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 .input:focus-visible {
@@ -193,11 +209,19 @@ a:focus-visible {
 
 /* -- scrambling-area display ------------------------------------------------ */
 
+/*
+ * Aligned to the top rather than centred. When the on-screen keyboard opens on a tablet the
+ * viewport shrinks, and a vertically centred card puts its own button underneath the
+ * keyboard, where taps never reach it. The generous bottom padding keeps the button
+ * reachable by scrolling in every case.
+ */
 .display-pair {
-  display: grid;
-  place-items: center;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
   min-height: 100dvh;
-  padding: 1.25rem;
+  padding: clamp(1.25rem, 8vh, 5rem) 1.25rem 60vh;
+  overflow-y: auto;
 }
 
 .display {
