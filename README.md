@@ -86,8 +86,7 @@ You get a summary before anything is stored — how many sets were found, and an
 unusual. Check the competition name matches; the app warns you if the archive looks like it
 belongs to a different competition, which is a much better time to notice than later.
 
-**Fewest Moves is skipped.** Those scrambles are handed out on paper and will never appear
-on a screen, so they are not imported at all.
+**Fewest Moves is skipped.** They are not imported at all.
 
 The archive is easiest to upload from the laptop it is already on. The day-to-day dashboard
 is designed for your phone.
