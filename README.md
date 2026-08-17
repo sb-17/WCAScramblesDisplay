@@ -85,7 +85,6 @@ Each tablet holds the key only for what is on screen. A lost tablet exposes one 
 - **The screen stays awake** on its own.
 - **Sheets are never recoloured**, so Megaminx, Square-1, Clock and Pyraminx diagrams stay correct.
 - **For real lockdown**, use iPadOS **Guided Access**. No web page can pin itself down.
-- **Before a real competition**, worth a word with WCA Software and Regulations.
 
 ---
 
