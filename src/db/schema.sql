@@ -86,6 +86,37 @@ create table if not exists scramble_sets (
 create index if not exists scramble_sets_competition_idx
   on scramble_sets (competition_id);
 
+-- A display in the scrambling area.
+--
+-- The Delegate creates the slot and gets a one-time code, which is typed into the device.
+-- The device then generates its own keypair and posts the public half when claiming the
+-- code; scramble set keys are later wrapped to that public key, so a device can only open
+-- what it has been sent deliberately.
+create table if not exists devices (
+  id                  uuid primary key default gen_random_uuid(),
+  competition_id      uuid not null references competitions (id) on delete cascade,
+  name                text not null,
+
+  -- Single use and short lived. Cleared on claim, so a code cannot be replayed.
+  activation_code     text unique,
+  code_expires_at     timestamptz,
+
+  -- Set when the device claims its code.
+  public_key          bytea,
+  -- SHA-256 of the device's bearer token. The token itself is shown to the device once.
+  token_hash          bytea,
+  paired_at           timestamptz,
+
+  -- Hard cap chosen by the Delegate at creation, extendable from their phone.
+  session_expires_at  timestamptz,
+  last_seen_at        timestamptz,
+
+  created_by          integer not null references users (wca_user_id),
+  created_at          timestamptz not null default now()
+);
+
+create index if not exists devices_competition_idx on devices (competition_id);
+
 -- Applied separately so databases created before unofficial competitions existed pick the
 -- change up. Dropping a constraint that is already absent is a no-op, so this stays
 -- re-runnable like everything else above.

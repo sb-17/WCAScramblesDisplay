@@ -12,6 +12,7 @@ import {
 import { loadIdentity } from "@/lib/identity-store";
 import { parseScrambleZip, type ParsedScrambles } from "@/scrambles/parse";
 import { packSet } from "@/scrambles/payload";
+import Devices from "./devices";
 
 interface SetRow {
   id: string;
@@ -193,6 +194,8 @@ export default function CompetitionClient({
           ))
         )}
       </div>
+
+      <Devices competitionId={competitionId} />
 
       {!keys ? (
         <div className="notice">
