@@ -18,6 +18,7 @@ interface Device {
   ackedSetId: string | null;
   ackedAt: string | null;
   ackedConfirmed: boolean;
+  cachedSetIds: string[] | null;
 }
 
 const DEFAULT_HOURS = 12;
@@ -33,6 +34,16 @@ function until(iso: string | null): string {
 }
 
 const isExpired = (iso: string | null) => iso !== null && new Date(iso).getTime() <= Date.now();
+
+/**
+ * A device that has never reported is treated as holding everything, so one paired before
+ * cache reporting existed is not left unable to receive anything.
+ */
+const holds = (device: Device, setId: string) =>
+  device.cachedSetIds === null || device.cachedSetIds.includes(setId);
+
+const stillDownloading = (device: Device, total: number) =>
+  device.cachedSetIds !== null && device.cachedSetIds.length < total;
 
 const labelOf = (sets: SetRow[], setId: string) =>
   sets.find((set) => set.id === setId)?.label ?? "a set that has since been removed";
@@ -89,6 +100,10 @@ export default function Devices({
 
   // A device can take a poll cycle to acknowledge, so keep checking until it has. Faster
   // while something is in flight, and slow enough otherwise to keep the countdowns honest.
+  const liveDevices = (devices ?? []).filter(
+    (device) => device.pairedAt !== null && !isExpired(device.sessionExpiresAt),
+  );
+
   const awaitingAck = (devices ?? []).some(
     (device) => device.currentSetId !== device.ackedSetId || !device.ackedConfirmed,
   );
@@ -181,6 +196,15 @@ export default function Devices({
           body: JSON.stringify({ setId, wrappedSetKey }),
         },
       );
+      if (response.status === 409) {
+        const body = (await response.json()) as { error?: string };
+        setError(
+          body.error === "not-downloaded"
+            ? `${device.name} has not downloaded that set yet. It will be available shortly.`
+            : `${device.name} is not available. Is it still paired?`,
+        );
+        return;
+      }
       if (!response.ok) {
         setError(`Could not reach ${device.name}. Is it still paired?`);
         return;
@@ -267,6 +291,11 @@ export default function Devices({
             {live ? (
               <>
                 <div>{showingLine(device, sets)}</div>
+                {stillDownloading(device, sets.length) ? (
+                  <div className="muted" style={{ fontSize: "0.875rem" }}>
+                    Downloading scrambles — {device.cachedSetIds?.length ?? 0} of {sets.length}
+                  </div>
+                ) : null}
                 <div className="controls">
                   <select
                     className="input"
@@ -279,8 +308,9 @@ export default function Devices({
                   >
                     <option value="">Choose a scramble set…</option>
                     {sets.map((set) => (
-                      <option key={set.id} value={set.id}>
+                      <option key={set.id} value={set.id} disabled={!holds(device, set.id)}>
                         {set.label}
+                        {holds(device, set.id) ? "" : " — not downloaded yet"}
                       </option>
                     ))}
                   </select>
@@ -322,7 +352,7 @@ export default function Devices({
         );
       })}
 
-      {(devices ?? []).some((d) => d.pairedAt && !isExpired(d.sessionExpiresAt)) ? (
+      {liveDevices.length > 0 ? (
         <div className="block">
           <div className="block-head">
             <div>All devices at once</div>
@@ -346,11 +376,15 @@ export default function Devices({
               }}
             >
               <option value="">Choose a scramble set…</option>
-              {sets.map((set) => (
-                <option key={set.id} value={set.id}>
-                  {set.label}
-                </option>
-              ))}
+              {sets.map((set) => {
+                const everywhere = liveDevices.every((device) => holds(device, set.id));
+                return (
+                  <option key={set.id} value={set.id} disabled={!everywhere}>
+                    {set.label}
+                    {everywhere ? "" : " — not on every screen yet"}
+                  </option>
+                );
+              })}
             </select>
             {confirming === "all" ? (
               <>

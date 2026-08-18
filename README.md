@@ -59,8 +59,8 @@ Creator only, and they cannot remove themselves.
 3. Take the 8-character code — one use, 30 minutes.
 4. On the tablet: **Open display** → type the code.
 
-It downloads the whole competition encrypted while pairing, so a bad venue network cannot
-stop a scramble appearing. Pairing also signs out any Delegate on that tablet and removes
+It downloads the whole competition encrypted while pairing, and re-checks every minute so
+sets uploaded later arrive too. Sets it does not yet hold cannot be sent to it. Pairing also signs out any Delegate on that tablet and removes
 their key — otherwise a forgotten session there opens every competition you can reach.
 
 **Show a set**

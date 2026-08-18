@@ -23,6 +23,8 @@ export interface DeviceRow {
   ackedAt: string | null;
   /** False while the set is on screen but covered, waiting for a scrambler to confirm it. */
   ackedConfirmed: boolean;
+  /** Sets this display holds. Null when it has never reported, which means "unknown". */
+  cachedSetIds: string[] | null;
 }
 
 export function normaliseCode(code: string): string {
@@ -69,7 +71,7 @@ export async function createDevice(input: {
          ${input.createdBy})
       on conflict (activation_code) do nothing
       returning id, name, activation_code, code_expires_at, paired_at,
-                session_expires_at, last_seen_at, public_key, acked_confirmed,
+                session_expires_at, last_seen_at, public_key, acked_confirmed, cached_set_ids,
                 current_set_id, acked_set_id, acked_at
     `);
 
@@ -84,7 +86,7 @@ export async function listDevices(competitionId: string): Promise<DeviceRow[]> {
   const sql = db();
   const found = await rows<DeviceRecord>(sql`
     select id, name, activation_code, code_expires_at, paired_at,
-           session_expires_at, last_seen_at, public_key, acked_confirmed,
+           session_expires_at, last_seen_at, public_key, acked_confirmed, cached_set_ids,
            current_set_id, acked_set_id, acked_at
       from devices
      where competition_id = ${competitionId}
@@ -217,6 +219,25 @@ export async function authenticateDevice(
   };
 }
 
+/** What a display reports it has downloaded, so it is never sent a set it cannot open. */
+export async function recordCachedSets(deviceId: string, setIds: string[]): Promise<void> {
+  const sql = db();
+  await sql`
+    update devices
+       set cached_set_ids = ${JSON.stringify(setIds)}::jsonb, last_seen_at = now()
+     where id = ${deviceId}
+  `;
+}
+
+/** Null means the device has never reported, and pushes are allowed rather than blocked. */
+export async function cachedSetsFor(deviceId: string): Promise<string[] | null> {
+  const sql = db();
+  const found = await rows<{ cached_set_ids: string[] | null }>(sql`
+    select cached_set_ids from devices where id = ${deviceId}
+  `);
+  return found[0]?.cached_set_ids ?? null;
+}
+
 export interface DeviceState {
   setId: string | null;
   label: string | null;
@@ -324,6 +345,7 @@ interface DeviceRecord {
   acked_set_id: string | null;
   acked_at: string | null;
   acked_confirmed: boolean;
+  cached_set_ids: string[] | null;
 }
 
 function toDevice(row: DeviceRecord): DeviceRow {
@@ -340,5 +362,6 @@ function toDevice(row: DeviceRecord): DeviceRow {
     ackedSetId: row.acked_set_id,
     ackedAt: row.acked_at,
     ackedConfirmed: row.acked_confirmed,
+    cachedSetIds: row.cached_set_ids,
   };
 }

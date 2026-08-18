@@ -10,7 +10,7 @@ import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 
 const require = createRequire(import.meta.url);
-const source = join(dirname(require.resolve("pdfjs-dist/package.json")), "build/pdf.worker.min.mjs");
+const source = join(dirname(require.resolve("pdfjs-dist/package.json")), "legacy/build/pdf.worker.min.mjs");
 const target = join(process.cwd(), "public", "pdf.worker.min.mjs");
 
 await mkdir(dirname(target), { recursive: true });

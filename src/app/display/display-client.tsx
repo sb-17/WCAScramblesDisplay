@@ -28,6 +28,8 @@ import PdfView from "./pdf-view";
 
 const POLL_VISIBLE_MS = 3_000;
 const POLL_HIDDEN_MS = 15_000;
+/** Sets uploaded after pairing would otherwise never be fetched. */
+const RECACHE_MS = 60_000;
 
 interface SetMeta {
   id: string;
@@ -161,30 +163,53 @@ export default function DisplayClient() {
     const body = (await response.json()) as { sets: SetMeta[] };
     const have = new Set(await cachedSetIds());
     const missing = body.sets.filter((set) => !have.has(set.id));
-    if (missing.length === 0) return;
 
-    setCaching({ done: 0, total: missing.length });
-    let done = 0;
-    for (const set of missing) {
-      const one = await fetch(`/api/display/sets/${set.id}`, {
-        headers: { authorization: `Bearer ${bearer}` },
-      });
-      if (one.ok) {
-        const payload = (await one.json()) as { ciphertext: string };
-        await cacheSet(set.id, fromBase64(payload.ciphertext));
+    if (missing.length > 0) {
+      setCaching({ done: 0, total: missing.length });
+      let done = 0;
+      for (const set of missing) {
+        const one = await fetch(`/api/display/sets/${set.id}`, {
+          headers: { authorization: `Bearer ${bearer}` },
+        });
+        if (one.ok) {
+          const payload = (await one.json()) as { ciphertext: string };
+          await cacheSet(set.id, fromBase64(payload.ciphertext));
+        }
+        done += 1;
+        setCaching({ done, total: missing.length });
       }
-      done += 1;
-      setCaching({ done, total: missing.length });
+      setCaching(null);
     }
-    setCaching(null);
+
+    // Reported every pass, so the Delegate is only ever offered sets this screen can open.
+    try {
+      await fetch("/api/display/cache", {
+        method: "POST",
+        headers: { "content-type": "application/json", authorization: `Bearer ${bearer}` },
+        body: JSON.stringify({ setIds: await cachedSetIds() }),
+      });
+    } catch {
+      // Reported again on the next pass.
+    }
   }, []);
 
+  // Repeated rather than run once at pairing: sets uploaded afterwards would otherwise
+  // never be downloaded, and pushing one would fail on a screen that looked ready.
   useEffect(() => {
     if (!token) return;
-    void (async () => {
+    let stopped = false;
+
+    const sweep = async () => {
       keysRef.current ??= await loadDeviceKeys();
-      await fillCache(token);
-    })();
+      if (!stopped) await fillCache(token);
+    };
+
+    void sweep();
+    const timer = setInterval(() => void sweep(), RECACHE_MS);
+    return () => {
+      stopped = true;
+      clearInterval(timer);
+    };
   }, [token, fillCache]);
 
   useEffect(() => {

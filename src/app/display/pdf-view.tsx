@@ -38,7 +38,11 @@ export default function PdfView({ pdf, passcode }: { pdf: Uint8Array; passcode: 
 
     void (async () => {
       try {
-        const pdfjs = await import("pdfjs-dist");
+        // The legacy build, deliberately. pdf.js 6 calls Map.prototype.getOrInsertComputed,
+        // a very new built-in that older Safari does not have, and the modern build assumes
+        // it exists -- a scrambling-area tablet a couple of iPadOS versions behind fails to
+        // draw anything. The legacy build polyfills it.
+        const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
         pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
         if (cancelled) return;
 

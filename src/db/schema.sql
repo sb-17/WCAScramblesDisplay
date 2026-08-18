@@ -156,3 +156,10 @@ create index if not exists push_log_competition_idx on push_log (competition_id,
 -- change up. Dropping a constraint that is already absent is a no-op, so this stays
 -- re-runnable like everything else above.
 alter table competitions alter column wca_competition_id drop not null;
+
+-- Which sets a display has actually downloaded. Null means it has never reported, in which
+-- case pushes are allowed: an older device that predates this must not be bricked by it.
+-- Once a device does report, a set it does not hold cannot be pushed to it -- otherwise the
+-- scramblers get an error where scrambles should be, which at a competition reads as the
+-- app being broken.
+alter table devices add column if not exists cached_set_ids jsonb;

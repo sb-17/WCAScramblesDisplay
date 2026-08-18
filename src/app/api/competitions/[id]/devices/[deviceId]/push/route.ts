@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { accessTo } from "@/db/competitions";
-import { pushToDevice } from "@/db/devices";
+import { cachedSetsFor, pushToDevice } from "@/db/devices";
 import { fromBase64 } from "@/lib/bytes";
 import { readSession } from "@/lib/session";
 
@@ -31,6 +31,16 @@ export async function POST(
   const setId = body.setId ?? null;
   if (setId !== null && !body.wrappedSetKey) {
     return NextResponse.json({ error: "missing-key" }, { status: 400 });
+  }
+
+  // Refuse a set the display has not downloaded. Without this the scramblers get an error
+  // where the scrambles should be, which at a competition reads as the app being broken.
+  // A device that has never reported its cache is left alone rather than blocked.
+  if (setId !== null) {
+    const cached = await cachedSetsFor(deviceId);
+    if (cached !== null && !cached.includes(setId)) {
+      return NextResponse.json({ error: "not-downloaded" }, { status: 409 });
+    }
   }
 
   const pushed = await pushToDevice({
