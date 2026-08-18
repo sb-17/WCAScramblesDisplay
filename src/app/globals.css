@@ -468,3 +468,24 @@ select.input {
   word-break: break-word;
   user-select: all;
 }
+
+/*
+ * Build identifier, pinned to the corner of every page. The background is a literal rgba
+ * rather than colour-mix so it stays readable over a white scramble sheet on older Safari,
+ * which is exactly the browser most likely to be running an outdated build.
+ */
+.version {
+  position: fixed;
+  right: 0.5rem;
+  bottom: calc(0.4rem + env(safe-area-inset-bottom, 0px));
+  z-index: 10;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(15, 17, 20, 0.72);
+  color: var(--text-dim);
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  line-height: 1.4;
+  pointer-events: none;
+  user-select: none;
+}

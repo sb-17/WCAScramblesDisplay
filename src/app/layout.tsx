@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
+import { appVersion } from "@/lib/version";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -16,7 +17,17 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        {children}
+        {/*
+          Every page including the display, so the build a tablet is running can be read off
+          it without touching anything. Inert and out of the way: no link, since navigating
+          away is exactly what a display must not offer.
+        */}
+        <div className="version" aria-hidden="true">
+          {appVersion()}
+        </div>
+      </body>
     </html>
   );
 }
